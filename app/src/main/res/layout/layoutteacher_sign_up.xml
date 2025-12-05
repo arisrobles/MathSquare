@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:background="@color/yellowbg"
+     android:id="@+id/main">
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:textSize="28sp"
+         android:textColor="@color/white"
+         android:layout_marginTop="70dp"
+         android:layout_marginBottom="100dp"
+         android:gravity="center_horizontal"
+         android:layout_marginHorizontal="28dp"
+         android:shadowRadius="4"
+         android:fontFamily="@font/paytone_one"
+         android:shadowColor="#000000"
+         android:shadowDx="2"
+         android:shadowDy="2"
+         android:id="@+id/question_opening"
+         android:text="Enter your Teacher information" />
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:padding="16dp"
+         android:orientation="vertical"
+         android:layout_marginTop="160dp">
+
+        <com.google.android.material.textfield.TextInputLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginEnd="16dp"
+             app:counterEnabled="true"
+             android:hint="Email Address"
+              android:layout_marginStart="16dp"
+             android:id="@+id/email_address_layout"
+             >
+
+            <com.google.android.material.textfield.TextInputEditText
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textColorHint="@color/white"
+                 android:fontFamily="@font/paytone_one"
+                     android:textColor="@color/black"
+                 android:maxLines="1"
+                 android:inputType="textEmailAddress"
+                 android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginEnd="16dp"
+             android:hint="Teacher First Name"
+              android:layout_marginTop="16dp"
+             android:layout_marginStart="16dp"
+             android:id="@+id/first_name_layout">
+
+            <com.google.android.material.textfield.TextInputEditText
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textColorHint="@color/white"
+                 android:fontFamily="@font/paytone_one"
+                    android:textColor="@color/black"
+                 android:maxLines="1"
+                 android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             app:endIconMode="password_toggle"
+             android:layout_marginEnd="16dp"
+             android:hint="Password"
+                  android:layout_marginTop="16dp"
+             android:layout_marginStart="16dp"
+             android:id="@+id/password">
+
+            <com.google.android.material.textfield.TextInputEditText
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textColorHint="@color/white"
+                 android:fontFamily="@font/paytone_one"
+                  android:textColor="@color/black"
+                 android:maxLines="1"
+                 android:inputType="textPassword" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             app:endIconMode="password_toggle"
+             android:layout_marginEnd="16dp"
+             android:hint="Repeat Password"
+                android:layout_marginTop="16dp"
+             android:layout_marginStart="16dp"
+             android:id="@+id/password_repeat">
+
+            <com.google.android.material.textfield.TextInputEditText
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textColorHint="@color/white"
+                 android:fontFamily="@font/paytone_one"
+                   android:textColor="@color/black"
+                 android:maxLines="1"
+                 android:inputType="textPassword" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+             android:layout_height="180dp"
+             android:layout_width="match_parent"
+             android:gravity="center|top"
+             android:orientation="vertical"
+             android:paddingTop="40dp">
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:layout_marginEnd="16dp"
+                 android:background="@drawable/box_create"
+                 android:elevation="8dp"
+                 android:fontFamily="@font/paytone_one"
+                 android:textSize="20sp"
+                 android:textColor="@color/white"
+                 android:layout_marginStart="16dp"
+                 android:id="@+id/btn_submit"
+                 android:text="Submit" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@color/yellowbg"
+    android:fillViewport="true">
+
+    <FrameLayout
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:background="@color/yellowbg"
+        android:id="@+id/main">
+
+        <FrameLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:id="@+id/number_container">
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:gravity="top"
+            android:orientation="vertical"
+            android:layout_marginTop="60dp"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:gravity="center_horizontal"
+                android:layout_marginHorizontal="28dp"
+                android:shadowRadius="4"
+                android:textSize="25sp"
+                android:fontFamily="@font/paytone_one"
+                android:textColor="@color/white"
+                android:shadowColor="#000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:text="Quiz Manager" />
+
+            <!-- Quiz Type Toggle -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginHorizontal="8dp">
+                
+                <Button
+                    android:id="@+id/btnCustomQuizzes"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Teacher Quizzes"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_save_rounded"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="12sp"
+                    android:minHeight="48dp" />
+                
+                <Button
+                    android:id="@+id/btnCSVQuizzes"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="CSV"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_inactive_rounded"
+                    android:layout_marginStart="4dp"
+                    android:textSize="14sp"
+                    android:minHeight="48dp" />
+                    
+            </LinearLayout>
+
+            <!-- Filter Section -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:orientation="vertical"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_card_background"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="#5DB575"
+                    android:textStyle="bold"
+                    android:text="Filter Quizzes"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Grade Filter -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Filter by Grade"
+                    android:layout_marginBottom="8dp"
+                    style="@style/CustomTextInputLayout">
+
+                    <Spinner
+                        android:id="@+id/spinnerGradeFilter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/paytone_one" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Section Filter -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Filter by Section"
+                    android:layout_marginBottom="8dp"
+                    style="@style/CustomTextInputLayout">
+
+                    <Spinner
+                        android:id="@+id/spinnerSectionFilter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/paytone_one" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Button
+                    android:id="@+id/btnClearFilters"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clear Filters"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_save_rounded"
+                    android:layout_marginTop="8dp"
+                    android:padding="12dp" />
+
+            </LinearLayout>
+
+            <!-- Quizzes List -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:orientation="vertical"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/txtQuizzesTitle"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="#5DB575"
+                    android:textStyle="bold"
+                    android:text="Custom Quizzes"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/txtEmptyState"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="#888888"
+                    android:text="Loading quizzes..."
+                    android:visibility="gone"
+                    android:layout_marginTop="20dp"
+                    android:padding="20dp" />
+
+                <LinearLayout
+                    android:id="@+id/quizzesListLayout"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</ScrollView>
+

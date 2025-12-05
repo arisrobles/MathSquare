@@ -1,0 +1,245 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/Dashboard.java",
+      "selection": {
+        "end": {
+          "column": 33,
+          "index": 897,
+          "line": 25
+        },
+        "start": {
+          "column": 4,
+          "index": 868,
+          "line": 25
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/dashboard_SectionPanel.java",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 9836,
+          "line": 259
+        },
+        "start": {
+          "column": 0,
+          "index": 9836,
+          "line": 259
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/dashboard_StudentsPanel.java",
+      "selection": {
+        "end": {
+          "column": 38,
+          "index": 8109,
+          "line": 215
+        },
+        "start": {
+          "column": 38,
+          "index": 8109,
+          "line": 215
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/dialog/PauseDialog.java",
+      "selection": {
+        "end": {
+          "column": 80,
+          "index": 6171,
+          "line": 158
+        },
+        "start": {
+          "column": 80,
+          "index": 6171,
+          "line": 158
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/dialog/CreateSection.java",
+      "selection": {
+        "end": {
+          "column": 45,
+          "index": 4731,
+          "line": 116
+        },
+        "start": {
+          "column": 45,
+          "index": 4731,
+          "line": 116
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/Results.java",
+      "selection": {
+        "end": {
+          "column": 33,
+          "index": 753,
+          "line": 23
+        },
+        "start": {
+          "column": 4,
+          "index": 724,
+          "line": 23
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/res/layout/layoutteacher_sign_up.xml",
+      "selection": {
+        "end": {
+          "column": 38,
+          "index": 1496,
+          "line": 38
+        },
+        "start": {
+          "column": 38,
+          "index": 1496,
+          "line": 38
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/res/layout/layoutteacher_log_in.xml",
+      "selection": {
+        "end": {
+          "column": 44,
+          "index": 1448,
+          "line": 37
+        },
+        "start": {
+          "column": 44,
+          "index": 1448,
+          "line": 37
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/res/layout/layoutstudent_sign_up.xml",
+      "selection": {
+        "end": {
+          "column": 44,
+          "index": 5139,
+          "line": 121
+        },
+        "start": {
+          "column": 44,
+          "index": 5139,
+          "line": 121
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/res/layout/layout_createsection.xml",
+      "selection": {
+        "end": {
+          "column": 52,
+          "index": 4734,
+          "line": 122
+        },
+        "start": {
+          "column": 52,
+          "index": 4734,
+          "line": 122
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/studentSignUp.java",
+      "selection": {
+        "end": {
+          "column": 32,
+          "index": 3985,
+          "line": 83
+        },
+        "start": {
+          "column": 32,
+          "index": 3985,
+          "line": 83
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/MultipleChoicePage.java",
+      "selection": {
+        "end": {
+          "column": 5,
+          "index": 26066,
+          "line": 668
+        },
+        "start": {
+          "column": 5,
+          "index": 26066,
+          "line": 668
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/signInUp.java",
+      "selection": {
+        "end": {
+          "column": 26,
+          "index": 3332,
+          "line": 86
+        },
+        "start": {
+          "column": 26,
+          "index": 3332,
+          "line": 86
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/MainActivity.java",
+      "selection": {
+        "end": {
+          "column": 39,
+          "index": 4739,
+          "line": 132
+        },
+        "start": {
+          "column": 39,
+          "index": 4739,
+          "line": 132
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/build.gradle",
+      "selection": {
+        "end": {
+          "column": 50,
+          "index": 1680,
+          "line": 59
+        },
+        "start": {
+          "column": 50,
+          "index": 1680,
+          "line": 59
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/res/values/colors.xml",
+      "selection": {
+        "end": {
+          "column": 25,
+          "index": 160,
+          "line": 4
+        },
+        "start": {
+          "column": 17,
+          "index": 152,
+          "line": 4
+        }
+      }
+    }
+  ],
+  "selectedFile": "/storage/emulated/0/AndroidIDEProjects/MathSquare/app/src/main/java/com/happym/mathsquare/MainActivity.java"
+}

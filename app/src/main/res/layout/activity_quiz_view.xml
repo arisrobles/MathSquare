@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@color/yellowbg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:gravity="center_horizontal"
+                android:textSize="28sp"
+                android:fontFamily="@font/paytone_one"
+                android:textColor="@color/white"
+                android:shadowRadius="4"
+                android:shadowColor="#000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:text="Quiz Details"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Quiz Info Card -->
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:background="@drawable/bg_board_two"
+            android:padding="8dp"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp"
+            android:elevation="4dp">
+
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:background="@drawable/bg_board_three"
+                android:padding="16dp"
+                android:orientation="vertical"
+                android:id="@+id/quizInfoLayout">
+
+                <TextView
+                    android:id="@+id/quizTitleText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:textSize="22sp"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="#204520"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"
+                    android:text="Quiz Title" />
+
+                <TextView
+                    android:id="@+id/quizInfoText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/paytone_one"
+                    android:textColor="#5DB575"
+                    android:lineSpacingExtra="4dp"
+                    android:text="Quiz Information" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Questions Section Header -->
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textSize="20sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="@color/white"
+            android:shadowRadius="4"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:text="Questions"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Questions Container -->
+        <LinearLayout
+            android:id="@+id/questionsLayout"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:orientation="vertical" />
+
+        <!-- Empty State -->
+        <TextView
+            android:id="@+id/emptyStateText"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:layout_marginVertical="40dp"
+            android:textSize="18sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="@color/white"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:text="Loading quiz..."
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</ScrollView>
+

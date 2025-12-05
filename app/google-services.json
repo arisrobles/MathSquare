@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "562704321125",
+    "project_id": "mathsquare-1cf4b",
+    "storage_bucket": "mathsquare-1cf4b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562704321125:android:165fe315a579013c13d48c",
+        "android_client_info": {
+          "package_name": "com.happym.mathsquare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb5OGpFEm2FeLasqM-nqcF0NSHWq5R5_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

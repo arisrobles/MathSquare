@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/yellowbg"
+    android:minWidth="300dp"
+    android:maxHeight="600dp">
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:fontFamily="@font/paytone_one"
+        android:textColor="#5DB575"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:id="@+id/dialogStudentName"
+        android:text="Student's Quiz History" />
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:textSize="14sp"
+        android:fontFamily="@font/paytone_one"
+        android:textColor="#888888"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        android:id="@+id/dialogEmptyState"
+        android:text="No quiz history available yet." />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:maxHeight="400dp"
+        android:id="@+id/dialogRecyclerView" />
+
+</LinearLayout>
+

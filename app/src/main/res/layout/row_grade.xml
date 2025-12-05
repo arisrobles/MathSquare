@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableRow
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_height="wrap_content"
+     android:layout_width="match_parent"
+     android:paddingTop="8dp">
+
+    <CheckBox
+         android:layout_height="wrap_content"
+         android:layout_width="20dp"
+         android:visibility="gone"
+         android:layout_marginEnd="4dp"
+         android:layout_gravity="start"
+         android:id="@+id/rowCheckbox" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:textSize="18sp"
+         android:fontFamily="@font/paytone_one"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/gradeText"
+         android:layout_gravity="start"
+         android:text="1" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:textSize="18sp"
+         android:fontFamily="@font/paytone_one"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/sectionText"
+         android:layout_gravity="end"
+         android:text="Nara" />
+
+</TableRow>

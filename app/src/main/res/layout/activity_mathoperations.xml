@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@color/yellowbg"
+    android:id="@+id/main">
+
+    <FrameLayout
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:id="@+id/number_container">
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginTop="-80dp">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textSize="45sp"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"
+            android:layout_marginHorizontal="28dp"
+            android:shadowRadius="4"
+            android:fontFamily="@font/paytone_one"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:layout_marginBottom="30dp"
+            android:id="@+id/text_choose_operation"
+            android:text="@string/choose_operation" />
+
+        <GridLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:useDefaultMargins="true"
+            android:alignmentMode="alignMargins"
+            android:columnCount="2"
+            android:rowCount="6"
+            android:gravity="center">
+
+            <!-- Addition Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_add"
+                android:background="@drawable/btn_condition_delete"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_add" />
+
+            <!-- Subtraction Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_subtract"
+                android:background="@drawable/btn_condition_two"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_subtract" />
+
+            <!-- Addition Label -->
+            <TextView
+                android:id="@+id/label_operation_add"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_addition"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+            <!-- Subtraction Label -->
+            <TextView
+                android:id="@+id/label_operation_subtract"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_subtraction"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+            <!-- Multiplication Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_multiply"
+                android:background="@drawable/btn_condition_create"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_multiply" />
+
+            <!-- Division Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_divide"
+                android:background="@drawable/btn_condition_one"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_divide" />
+
+            <!-- Multiplication Label -->
+            <TextView
+                android:id="@+id/label_operation_multiply"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_multiplication"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+            <!-- Division Label -->
+            <TextView
+                android:id="@+id/label_operation_divide"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_division"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+            <!-- Decimals Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_decimal"
+                android:background="@drawable/btn_condition_red"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_decimal" />
+
+            <!-- Percentage Button and Label -->
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_height="110dp"
+                android:layout_width="110dp"
+                android:src="@drawable/ic_operation_percentage"
+                android:background="@drawable/btn_condition_create"
+                android:padding="25dp"
+                android:layout_margin="8dp"
+                android:id="@+id/btn_operation_percentage" />
+
+            <!-- Decimals Label -->
+            <TextView
+                android:id="@+id/label_operation_decimal"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_decimals"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+            <!-- Percentage Label -->
+            <TextView
+                android:id="@+id/label_operation_percentage"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="@string/operation_percentage"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:fontFamily="@font/paytone_one"
+                android:shadowRadius="2"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:layout_marginTop="-10dp"
+                android:layout_marginHorizontal="10dp" />
+
+        </GridLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableRow
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_height="wrap_content"
+     android:layout_width="match_parent"
+     android:paddingTop="8dp">
+
+     <CheckBox
+        android:layout_height="wrap_content"
+        android:layout_width="20dp"
+        android:layout_gravity="start"
+        android:id="@+id/rowCheckbox"
+        android:visibility="gone"
+                                android:layout_marginEnd="4dp"
+        />
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:layout_weight="1"
+         android:orientation="horizontal"
+         android:gravity="center_vertical"
+         android:layout_gravity="start">
+         
+         <TextView
+             android:layout_height="wrap_content"
+             android:layout_width="0dp"
+             android:layout_weight="1"
+             android:gravity="start"
+             android:fontFamily="@font/paytone_one"
+             android:textSize="14sp"
+             android:textColor="#5DB575"
+             android:id="@+id/nameText" />
+             
+         <ImageView
+             android:layout_height="32dp"
+             android:layout_width="32dp"
+             android:layout_marginStart="8dp"
+             android:src="@drawable/ic_history"
+             android:background="@drawable/btn_condition_create"
+             android:padding="6dp"
+             android:id="@+id/btnHistory"
+             android:contentDescription="View History"
+             android:clickable="true"
+             android:focusable="true" />
+             
+    </LinearLayout>
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:fontFamily="@font/paytone_one"
+         android:textSize="14sp"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/sectionText"
+         android:layout_gravity="start" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:fontFamily="@font/paytone_one"
+         android:textSize="14sp"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/gradeText"
+         android:layout_gravity="start" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:fontFamily="@font/paytone_one"
+         android:textSize="14sp"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/quizNoText"
+         android:layout_gravity="start" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:gravity="center"
+         android:fontFamily="@font/paytone_one"
+         android:textSize="14sp"
+         android:textColor="#5DB575"
+         android:layout_weight="1"
+         android:id="@+id/scoreText"
+         android:layout_gravity="end" />
+
+</TableRow>

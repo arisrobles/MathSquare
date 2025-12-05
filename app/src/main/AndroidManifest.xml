@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MathSquare"
+        tools:targetApi="31">
+        <activity
+            android:name=".AddAdminActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AddAdmin"
+            android:exported="false"
+            android:theme="@style/Theme.MathSquare" />
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+        <activity
+            android:name=".studentSignUp"
+            android:exported="true" />
+        <activity
+            android:name=".Dashboard"
+            android:exported="true" />
+        <activity
+            android:name=".teacherSignUp"
+            android:exported="true" />
+        <activity
+            android:name=".teacherLogIn"
+            android:exported="true" />
+        <activity
+            android:name=".dashboard_StudentsPanel"
+            android:exported="true" />
+        <activity
+            android:name=".dashboard_SectionPanel"
+            android:exported="true" />
+        <activity
+            android:name=".GameType.OnTimer.OnTimerLevelSelection"
+            android:exported="true" />
+        <activity
+            android:name=".GameType.OnTimer.OnTimerSettings"
+            android:exported="true" />
+        <activity
+            android:name=".GameType.Passing.passingWorldsSelection"
+            android:exported="true" />
+        <activity
+            android:name=".GameType.Passing.passingStageSelection"
+            android:exported="true" />
+        <activity
+            android:name=".GameType.Practice.PracticeLevels"
+            android:exported="true" />
+        <activity
+            android:name=".signInUp"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Difficulty" />
+        <activity
+            android:name=".MultipleChoicePage"
+            android:exported="true" />
+        <activity
+            android:name=".MultipleChooser"
+            android:exported="true" />
+        <activity android:name=".MathOperations" />
+        <activity android:name=".DecimalOperations" />
+        <activity android:name=".Results" />
+        <activity
+            android:name=".QuizzesSection"
+            android:exported="true" />
+        <activity
+            android:name=".WebViewActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name=".PDFViewerActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name=".NumberAnimation"
+            android:exported="true" />
+        <activity
+            android:name=".ScoreHistoryActivity"
+            android:exported="true" />
+        <activity
+            android:name=".QuizCMSActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StudentHistoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StudentNumberManagerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".QuizManagerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TeacherQuizCreatorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".QuizViewActivity"
+            android:exported="false" />
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+    </application>
+
+</manifest>

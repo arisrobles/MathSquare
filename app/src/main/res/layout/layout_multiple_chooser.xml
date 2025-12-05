@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:background="@color/yellowbg"
+     android:id="@+id/main">
+
+    <FrameLayout
+         android:layout_height="match_parent"
+         android:layout_width="match_parent"
+         android:id="@+id/number_container">
+
+    </FrameLayout>
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:gravity="top|center"
+         android:orientation="vertical">
+
+        <LinearLayout
+             android:layout_height="70dp"
+             android:layout_width="match_parent"
+             android:gravity="center"
+             android:background="@drawable/btn_long_condition_off"
+             android:orientation="horizontal"
+             android:layout_marginLeft="25dp"
+             android:layout_marginRight="25dp"
+             android:layout_marginTop="30dp">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:layout_marginEnd="4dp"
+                 android:textSize="20sp"
+                 android:textColor="@color/white"
+                 android:gravity="center_horizontal"
+                 android:shadowRadius="4"
+                 android:fontFamily="@font/paytone_one"
+                 android:shadowColor="#000000"
+                 android:shadowDx="2"
+                 android:shadowDy="2"
+                 android:id="@+id/selectedDifficulty"
+                 android:text="Addition" />
+
+            <ImageView
+                 android:layout_height="20dp"
+                 android:layout_width="20dp"
+                 android:src="@drawable/btn_operation_add"
+                 android:id="@+id/difficultyImage"
+                 android:layout_gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="wrap_content"
+             android:layout_marginBottom="30dp"
+             android:gravity="center"
+             android:layout_marginTop="40dp"
+             android:layout_gravity="center"
+             android:orientation="vertical">
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:gravity="center"
+                 android:orientation="vertical"
+                 android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                     android:layout_height="30dp"
+                     android:layout_width="120dp"
+                     android:layout_marginBottom="8dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_long_condition_off"
+                     android:orientation="horizontal">
+
+                    <TextView
+                         android:layout_height="wrap_content"
+                         android:layout_width="wrap_content"
+                         android:gravity="center"
+                         android:layout_marginHorizontal="28dp"
+                         android:shadowRadius="4"
+                         android:textSize="12sp"
+                         android:fontFamily="@font/paytone_one"
+                         android:textColor="@color/white"
+                         android:shadowColor="#000000"
+                         android:shadowDx="2"
+                         android:shadowDy="2"
+                         android:text="Practice" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                     android:layout_height="120dp"
+                     android:layout_width="120dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_short_condition"
+                     android:orientation="vertical"
+                     android:id="@+id/btn_practice">
+
+                    <ImageView
+                         android:layout_height="100dp"
+                         android:layout_width="100dp"
+                         android:src="@drawable/ic_practice"
+                         android:padding="15dp"
+                         android:layout_gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:gravity="center"
+                 android:orientation="vertical"
+                 android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                     android:layout_height="30dp"
+                     android:layout_width="140dp"
+                     android:layout_marginBottom="8dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_long_condition_off"
+                     android:orientation="horizontal">
+
+                    <TextView
+                         android:layout_height="wrap_content"
+                         android:layout_width="wrap_content"
+                         android:gravity="center"
+                         android:layout_marginHorizontal="28dp"
+                         android:shadowRadius="4"
+                         android:textSize="12sp"
+                         android:fontFamily="@font/paytone_one"
+                         android:textColor="@color/white"
+                         android:shadowColor="#000000"
+                         android:shadowDx="2"
+                         android:shadowDy="2"
+                         android:text="On Timer" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                     android:layout_height="120dp"
+                     android:layout_width="120dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_short_condition"
+                     android:orientation="vertical"
+                     android:id="@+id/ontimer_btn">
+
+                    <ImageView
+                         android:layout_height="100dp"
+                         android:layout_width="100dp"
+                         android:src="@drawable/ic_ontimer"
+                         android:padding="15dp"
+                         android:layout_gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:gravity="center"
+                 android:orientation="vertical">
+
+                <LinearLayout
+                     android:layout_height="30dp"
+                     android:layout_width="120dp"
+                     android:layout_marginBottom="8dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_long_condition_off"
+                     android:orientation="horizontal">
+
+                    <TextView
+                         android:layout_height="wrap_content"
+                         android:layout_width="wrap_content"
+                         android:gravity="center"
+                         android:layout_marginHorizontal="28dp"
+                         android:shadowRadius="4"
+                         android:textSize="12sp"
+                         android:fontFamily="@font/paytone_one"
+                         android:textColor="@color/white"
+                         android:shadowColor="#000000"
+                         android:shadowDx="2"
+                         android:shadowDy="2"
+                         android:text="Passing" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                     android:layout_height="120dp"
+                     android:layout_width="120dp"
+                     android:gravity="center"
+                     android:background="@drawable/btn_short_condition"
+                     android:orientation="vertical"
+                     android:id="@+id/passing_btn">
+
+                    <ImageView
+                         android:layout_height="80dp"
+                         android:layout_width="80dp"
+                         android:src="@drawable/ic_passing"
+                         android:padding="15dp"
+                         android:layout_gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

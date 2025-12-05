@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:background="@color/yellowbg"
+     android:id="@+id/main">
+
+    <FrameLayout
+         android:layout_height="match_parent"
+         android:layout_width="match_parent"
+         android:id="@+id/number_container">
+
+    </FrameLayout>
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:gravity="top|center"
+         android:orientation="vertical"
+         android:layout_marginTop="20dp">
+
+        <LinearLayout
+             android:layout_height="80dp"
+             android:layout_width="match_parent"
+             android:gravity="center"
+             android:background="@drawable/btn_long_condition"
+             android:orientation="vertical"
+             android:layout_marginLeft="25dp"
+             android:layout_marginRight="25dp"
+             android:layout_marginTop="20dp">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:gravity="center_horizontal"
+                 android:layout_marginHorizontal="20dp"
+                 android:shadowRadius="4"
+                 android:textSize="23sp"
+                 android:fontFamily="@font/paytone_one"
+                 android:textColor="@color/white"
+                 android:shadowColor="#000000"
+                 android:shadowDx="2"
+                 android:shadowDy="2"
+                 android:text="Math Tutorials" />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:visibility="visible"
+             android:gravity="center_horizontal"
+             android:orientation="vertical"
+             tools:layout_editor_absoluteX="0dp"
+             android:layout_marginTop="20dp"
+             app:layout_constraintBottom_toBottomOf="parent"
+             app:layout_constraintVertical_bias="0.233"
+             app:layout_constraintTop_toBottomOf="@+id/textview_difficulty"
+             android:id="@+id/difficulty_one">
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                 android:background="@drawable/btn_addition_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_addition"
+                 android:paddingTop="5dp"
+                 android:text="Addition" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                 android:background="@drawable/btn_multiplication_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_multiplication"
+                 android:paddingTop="5dp"
+                 android:text="Multiplication" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                 android:background="@drawable/btn_division_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_division"
+                 android:paddingTop="5dp"
+                 android:text="Division" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                 android:background="@drawable/btn_subtraction_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_subtraction"
+                 android:paddingTop="5dp"
+                 android:text="Subtraction" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                android:background="@drawable/btn_addition_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_decimals"
+                 android:paddingTop="5dp"
+                 android:text="Decimals" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
+                android:background="@drawable/btn_multiplication_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_percentage"
+                 android:paddingTop="5dp"
+                 android:text="Percentage" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <android.webkit.WebView
+         android:layout_height="match_parent"
+         android:layout_width="match_parent"
+         android:visibility="gone"
+        android:layout_marginTop="30dp"
+         android:id="@+id/webView">
+
+    </android.webkit.WebView>
+
+</FrameLayout>

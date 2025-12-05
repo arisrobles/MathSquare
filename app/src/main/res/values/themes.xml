@@ -1,0 +1,36 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MathSquare" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <item name="android:statusBarColor">
+            #00FFFFFF
+        </item>
+        <item name="android:navigationBarColor">
+            #00FFFFFF
+        </item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Theme.MathSquare" parent="Base.Theme.MathSquare" />
+
+    <style name="FullScreenDialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+    <style name="RoundedAlertDialog" parent="ThemeOverlay.AppCompat.Dialog">
+        <item name="android:background">@drawable/dialog_background</item>
+        <item name="android:windowMinWidthMajor">80%</item>
+        <item name="android:windowMinWidthMinor">80%</item>
+    </style>
+
+    <style name="DialogTextStyle">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:shadowRadius">2</item>
+        <item name="android:shadowColor">#000000</item>
+        <item name="android:shadowDx">4</item>
+        <item name="android:shadowDy">3</item>
+        <item name="android:fontFamily">@font/shantell_sans_bold</item>
+    </style>
+</resources>

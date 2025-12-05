@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@color/yellowbg"
+    android:id="@+id/main">
+
+    <FrameLayout
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:id="@+id/number_container">
+
+    </FrameLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/top_banner"
+            android:layout_height="70dp"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:background="@drawable/btn_long_condition_off"
+            android:orientation="horizontal"
+            android:layout_marginLeft="25dp"
+            android:layout_marginRight="25dp"
+            android:layout_marginTop="30dp"
+            android:layout_alignParentTop="true">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:gravity="center_horizontal"
+                android:shadowRadius="4"
+                android:textSize="20sp"
+                android:fontFamily="@font/paytone_one"
+                android:textColor="@color/white"
+                android:shadowColor="#000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:text="Passing" />
+
+            <ImageView
+                android:layout_height="20dp"
+                android:layout_width="20dp"
+                android:src="@drawable/btn_operation_add"
+                android:id="@+id/difficultyImage"
+                android:layout_gravity="center" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <!-- Level 1 -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_marginEnd="16dp">
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_one"
+                    android:padding="2dp"
+                    android:translationY="60dp"
+                    android:layout_gravity="center" />
+
+                <FrameLayout
+                    android:layout_height="80dp"
+                    android:layout_width="80dp"
+                    android:contentDescription="Available"
+                    android:gravity="center"
+                    android:id="@+id/level_one">
+
+                    <LinearLayout
+                        android:layout_height="match_parent"
+                        android:layout_width="match_parent"
+                        android:gravity="center"
+                        android:background="@drawable/btn_short_condition"
+                        android:orientation="vertical"
+                        android:id="@+id/level_one_box">
+
+                        <TextView
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:shadowRadius="4"
+                            android:textSize="33sp"
+                            android:fontFamily="@font/paytone_one"
+                            android:textColor="@color/white"
+                            android:shadowColor="#000000"
+                            android:shadowDx="2"
+                            android:shadowDy="2"
+                            android:text="1" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_none"
+                    android:translationY="-90dp"
+                    android:id="@+id/level_one_stars"
+                    android:layout_gravity="center" />
+
+                <ImageView
+                    android:layout_height="90dp"
+                    android:layout_width="88dp"
+                    android:visibility="visible"
+                    android:src="@drawable/transparent_box"
+                    android:translationY="-120dp"
+                    android:id="@+id/level_one_flash_box"
+                    android:layout_gravity="center" />
+
+            </LinearLayout>
+
+            <!-- Level 2 -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_marginEnd="16dp">
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_one"
+                    android:padding="2dp"
+                    android:translationY="60dp"
+                    android:layout_gravity="center" />
+
+                <FrameLayout
+                    android:layout_height="80dp"
+                    android:layout_width="80dp"
+                    android:contentDescription="Not_Available"
+                    android:gravity="center"
+                    android:id="@+id/level_two">
+
+                    <LinearLayout
+                        android:layout_height="match_parent"
+                        android:layout_width="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:id="@+id/level_two_box">
+
+                        <TextView
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:shadowRadius="4"
+                            android:textSize="33sp"
+                            android:fontFamily="@font/paytone_one"
+                            android:textColor="@color/white"
+                            android:shadowColor="#000000"
+                            android:shadowDx="2"
+                            android:shadowDy="2"
+                            android:text="2" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_none"
+                    android:translationY="-90dp"
+                    android:id="@+id/level_two_stars"
+                    android:layout_gravity="center" />
+
+                <ImageView
+                    android:layout_height="90dp"
+                    android:layout_width="88dp"
+                    android:visibility="visible"
+                    android:src="@drawable/transparent_box"
+                    android:translationY="-120dp"
+                    android:id="@+id/level_two_flash_box"
+                    android:layout_gravity="center" />
+
+            </LinearLayout>
+
+            <!-- Level 3 -->
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_one"
+                    android:padding="2dp"
+                    android:translationY="60dp"
+                    android:layout_gravity="center" />
+
+                <FrameLayout
+                    android:layout_height="80dp"
+                    android:layout_width="80dp"
+                    android:contentDescription="Not_Available"
+                    android:gravity="center"
+                    android:id="@+id/level_three">
+
+                    <LinearLayout
+                        android:layout_height="match_parent"
+                        android:layout_width="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:shadowRadius="4"
+                            android:textSize="33sp"
+                            android:fontFamily="@font/paytone_one"
+                            android:textColor="@color/white"
+                            android:shadowColor="#000000"
+                            android:shadowDx="2"
+                            android:shadowDy="2"
+                            android:text="3" />
+
+                        </LinearLayout>
+
+                    </FrameLayout>
+
+                <ImageView
+                    android:layout_height="30dp"
+                    android:layout_width="match_parent"
+                    android:src="@drawable/ic_star_none"
+                    android:translationY="-90dp"
+                    android:id="@+id/level_three_stars"
+                    android:layout_gravity="center" />
+
+                <ImageView
+                    android:layout_height="90dp"
+                    android:layout_width="88dp"
+                    android:visibility="visible"
+                    android:src="@drawable/transparent_box"
+                    android:translationY="-120dp"
+                    android:id="@+id/level_three_flash_box"
+                    android:layout_gravity="center" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="30dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/btn_condition_green"
+                android:text="Back"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/btn_condition_green"
+                android:text="Next"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</FrameLayout>

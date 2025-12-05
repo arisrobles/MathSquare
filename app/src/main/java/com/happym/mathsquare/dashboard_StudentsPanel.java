@@ -40,8 +40,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class dashboard_StudentsPanel extends AppCompatActivity {
     private RecyclerView studentsRecyclerView;
@@ -240,73 +242,241 @@ private void initializeSwitchListeners() {
    private void fetchStudents(String filter) {
     try {
         Log.d("FETCH_STUDENTS", "Starting fetch from Firestore...");
-
-        db.collection("Accounts")
-            .document("Students")
-            .collection("MathSquare")
-            .whereEqualTo("gameType", filter) // Filter by gameType
-            .orderBy("quizno_int", Query.Direction.ASCENDING)
+        
+        // First, get the teacher's assigned grade and section
+        String teacherEmail = sharedPreferences.getEmail(this);
+        
+        if (teacherEmail == null || teacherEmail.isEmpty()) {
+            Toast.makeText(this, "Teacher email not found. Please log in again.", Toast.LENGTH_LONG).show();
+            Log.e("FETCH_STUDENTS", "Teacher email is null or empty");
+            return;
+        }
+        
+        Log.d("FETCH_STUDENTS", "Fetching teacher profile for: " + teacherEmail);
+        
+        // Fetch teacher's assigned grade and section
+        db.collection("TeacherProfiles")
+            .whereEqualTo("email", teacherEmail)
+            .limit(1)
             .get()
-            .addOnCompleteListener(task -> {
-                try {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        List<Student> students = new ArrayList<>();
-
-                        Log.d("FETCH_STUDENTS", "Documents fetched: " + task.getResult().size());
-
-                        for (QueryDocumentSnapshot doc : task.getResult()) {
-                            try {
-                                String firstName = doc.getString("firstName");
-                                String lastName = doc.getString("lastName");
-                                String section = doc.getString("section");
-                                String grade = doc.getString("grade");
-                                String quizNo = doc.getString("quizno");
-                                String score = doc.getString("quizscore");
-                                String gameType = doc.getString("gameType");
-
-                                String documentId = doc.getId();
-
-                                Log.d("FETCH_STUDENTS", "Processing doc ID: " + documentId + " | GameType: " + gameType);
-
-                                students.add(new Student(
-                                        firstName + " " + lastName,
-                                        section,
-                                        grade,
-                                        quizNo,
-                                        score,
-                                        documentId
-                                ));
-                            } catch (Exception e) {
-                                Log.e("FETCH_STUDENTS", "Error parsing document: " + e.getMessage());
-                                Toast.makeText(this, "Error processing document: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-
-                        // Store all students for search functionality
-                        allStudents.clear();
-                        allStudents.addAll(students);
-
-                        updateStudentList(students);
-                        Log.d("FETCH_STUDENTS", "Student list size: " + students.size());
-
+            .addOnCompleteListener(teacherTask -> {
+                if (teacherTask.isSuccessful() && teacherTask.getResult() != null && !teacherTask.getResult().isEmpty()) {
+                    QueryDocumentSnapshot teacherDoc = (QueryDocumentSnapshot) teacherTask.getResult().getDocuments().get(0);
+                    String assignedGrade = teacherDoc.getString("assignedGrade");
+                    String assignedSection = teacherDoc.getString("assignedSection");
+                    
+                    Log.d("FETCH_STUDENTS", "Teacher assigned grade: " + assignedGrade + ", section: " + assignedSection);
+                    
+                    // If teacher has assigned grade and section, filter students accordingly
+                    if (assignedGrade != null && assignedSection != null && 
+                        !assignedGrade.isEmpty() && !assignedSection.isEmpty()) {
+                        
+                        // Normalize section name (trim for consistency)
+                        String normalizedSection = assignedSection.trim();
+                        
+                        // Fetch students filtered by teacher's assigned grade and section
+                        fetchStudentsWithFilter(filter, assignedGrade, normalizedSection);
                     } else {
-                        Log.w("FETCH_STUDENTS", "Task unsuccessful or no result");
-                        Toast.makeText(this, "No student data found.", Toast.LENGTH_SHORT).show();
+                        // Teacher doesn't have assigned grade/section, show all students (fallback)
+                        Log.w("FETCH_STUDENTS", "Teacher has no assigned grade/section, showing all students");
+                        fetchAllStudents(filter);
                     }
-                } catch (Exception e) {
-                    Log.e("FETCH_STUDENTS", "Error in onComplete: " + e.getMessage());
-                    Toast.makeText(this, "Error processing student data: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                } else {
+                    // Teacher profile not found, show all students (fallback)
+                    Log.w("FETCH_STUDENTS", "Teacher profile not found, showing all students");
+                    fetchAllStudents(filter);
                 }
             })
             .addOnFailureListener(e -> {
-                Log.e("FETCH_STUDENTS", "Firestore query failed: " + e.getMessage());
-                Toast.makeText(this, "Error fetching students: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e("FETCH_STUDENTS", "Error fetching teacher profile: " + e.getMessage());
+                // Fallback to showing all students
+                fetchAllStudents(filter);
             });
     } catch (Exception e) {
         Log.e("FETCH_STUDENTS", "Initial fetch error: " + e.getMessage());
         Toast.makeText(this, "Error initializing fetch: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
 }
+
+/**
+ * Fetches students filtered by teacher's assigned grade and section
+ */
+private void fetchStudentsWithFilter(String filter, String assignedGrade, String assignedSection) {
+    try {
+        Log.d("FETCH_STUDENTS", "Fetching students for Grade: " + assignedGrade + ", Section: " + assignedSection);
+
+        // Use only gameType and grade in Firestore query to avoid composite index requirement
+        // We'll filter by section client-side
+        db.collection("Accounts")
+            .document("Students")
+            .collection("MathSquare")
+            .whereEqualTo("gameType", filter) // Filter by gameType
+            .whereEqualTo("grade", assignedGrade) // Filter by teacher's assigned grade
+            .get()
+            .addOnCompleteListener(task -> {
+                processStudentResults(task, assignedGrade, assignedSection);
+            })
+            .addOnFailureListener(e -> {
+                Log.e("FETCH_STUDENTS", "Firestore query failed: " + e.getMessage());
+                Toast.makeText(this, "Error fetching students: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+    } catch (Exception e) {
+        Log.e("FETCH_STUDENTS", "Error in fetchStudentsWithFilter: " + e.getMessage());
+        Toast.makeText(this, "Error fetching students: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+}
+
+/**
+ * Fetches all students (fallback when teacher has no assigned grade/section)
+ */
+private void fetchAllStudents(String filter) {
+    try {
+        Log.d("FETCH_STUDENTS", "Fetching all students (no grade/section filter)");
+
+        db.collection("Accounts")
+            .document("Students")
+            .collection("MathSquare")
+            .whereEqualTo("gameType", filter) // Filter by gameType
+            .get()
+            .addOnCompleteListener(task -> {
+                processStudentResults(task, null, null);
+            })
+            .addOnFailureListener(e -> {
+                Log.e("FETCH_STUDENTS", "Firestore query failed: " + e.getMessage());
+                Toast.makeText(this, "Error fetching students: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+    } catch (Exception e) {
+        Log.e("FETCH_STUDENTS", "Error in fetchAllStudents: " + e.getMessage());
+        Toast.makeText(this, "Error fetching students: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+}
+
+/**
+ * Processes the student query results
+ */
+private void processStudentResults(com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> task, String assignedGrade, String assignedSection) {
+    try {
+        if (task.isSuccessful() && task.getResult() != null) {
+            // Use a Map to deduplicate students by unique identifier
+            // Key: firstName_lastName_section_grade
+            // Value: Student object (keeping the latest attempt based on timestamp)
+            Map<String, Student> uniqueStudentsMap = new HashMap<>();
+            Map<String, Date> studentTimestamps = new HashMap<>();
+
+            Log.d("FETCH_STUDENTS", "Documents fetched: " + task.getResult().size());
+            if (assignedGrade != null && assignedSection != null) {
+                Log.d("FETCH_STUDENTS", "Filtered by Grade: " + assignedGrade + ", Section: " + assignedSection);
+            }
+
+            for (QueryDocumentSnapshot doc : task.getResult()) {
+                try {
+                    String firstName = doc.getString("firstName");
+                    String lastName = doc.getString("lastName");
+                    String section = doc.getString("section");
+                    String grade = doc.getString("grade");
+                    String quizNo = doc.getString("quizno");
+                    String score = doc.getString("quizscore");
+                    String gameType = doc.getString("gameType");
+                    Date timestamp = doc.getDate("timestamp");
+
+                    String documentId = doc.getId();
+
+                    // Skip if required fields are missing
+                    if (firstName == null || lastName == null || section == null || grade == null) {
+                        Log.w("FETCH_STUDENTS", "Skipping document with missing required fields: " + documentId);
+                        continue;
+                    }
+
+                    // Additional filter: if teacher has assigned grade/section, ensure exact match
+                    if (assignedGrade != null && assignedSection != null) {
+                        // Normalize section names for comparison (trim whitespace)
+                        String normalizedDocSection = section.trim();
+                        String normalizedAssignedSection = assignedSection.trim();
+                        
+                        if (!grade.equals(assignedGrade) || !normalizedDocSection.equals(normalizedAssignedSection)) {
+                            Log.d("FETCH_STUDENTS", "Skipping student - doesn't match assigned grade/section: " + 
+                                firstName + " " + lastName + " (Grade: " + grade + ", Section: " + section + ")");
+                            continue;
+                        }
+                    }
+
+                    // Create unique key for student (firstName + lastName + section + grade)
+                    String studentKey = (firstName + "_" + lastName + "_" + section + "_" + grade).toLowerCase().trim();
+
+                    Log.d("FETCH_STUDENTS", "Processing doc ID: " + documentId + " | Student: " + firstName + " " + lastName + " | Key: " + studentKey);
+
+                    // Check if we've seen this student before
+                    if (!uniqueStudentsMap.containsKey(studentKey)) {
+                        // First time seeing this student - add them
+                        Student student = new Student(
+                                firstName + " " + lastName,
+                                section,
+                                grade,
+                                quizNo != null ? quizNo : "N/A",
+                                score != null ? score : "0",
+                                documentId
+                        );
+                        uniqueStudentsMap.put(studentKey, student);
+                        studentTimestamps.put(studentKey, timestamp != null ? timestamp : new Date());
+                        Log.d("FETCH_STUDENTS", "Added new student: " + studentKey);
+                    } else {
+                        // Student already exists - keep the one with the latest timestamp
+                        Date existingTimestamp = studentTimestamps.get(studentKey);
+                        if (timestamp != null && (existingTimestamp == null || timestamp.after(existingTimestamp))) {
+                            // This attempt is newer - replace the student entry
+                            Student student = new Student(
+                                    firstName + " " + lastName,
+                                    section,
+                                    grade,
+                                    quizNo != null ? quizNo : "N/A",
+                                    score != null ? score : "0",
+                                    documentId
+                            );
+                            uniqueStudentsMap.put(studentKey, student);
+                            studentTimestamps.put(studentKey, timestamp);
+                            Log.d("FETCH_STUDENTS", "Updated student with newer attempt: " + studentKey);
+                        } else {
+                            Log.d("FETCH_STUDENTS", "Skipping older attempt for student: " + studentKey);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e("FETCH_STUDENTS", "Error parsing document: " + e.getMessage());
+                    Toast.makeText(this, "Error processing document: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            // Convert map values to list
+            List<Student> students = new ArrayList<>(uniqueStudentsMap.values());
+            
+            // Sort students by quiz number (client-side sorting to avoid Firestore index requirement)
+            students.sort((s1, s2) -> {
+                try {
+                    int quiz1 = Integer.parseInt(s1.getQuizNo().replaceAll("[^0-9]", ""));
+                    int quiz2 = Integer.parseInt(s2.getQuizNo().replaceAll("[^0-9]", ""));
+                    return Integer.compare(quiz1, quiz2);
+                } catch (NumberFormatException e) {
+                    // If parsing fails, maintain original order
+                    return s1.getQuizNo().compareTo(s2.getQuizNo());
+                }
+            });
+
+            // Store all students for search functionality
+            allStudents.clear();
+            allStudents.addAll(students);
+
+            updateStudentList(students);
+            Log.d("FETCH_STUDENTS", "Unique students after deduplication: " + students.size() + " (from " + task.getResult().size() + " total documents)");
+
+        } else {
+            Log.w("FETCH_STUDENTS", "Task unsuccessful or no result");
+            Toast.makeText(this, "No student data found.", Toast.LENGTH_SHORT).show();
+        }
+    } catch (Exception e) {
+        Log.e("FETCH_STUDENTS", "Error in processStudentResults: " + e.getMessage());
+        Toast.makeText(this, "Error processing student data: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+}
+
 
 
 private void updateStudentList(List<Student> students) {

@@ -1,30 +1,18 @@
-buildscript {
-    ext.kotlin_version = '1.9.0'
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        // Other dependencies
-    }
-}
-
 plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.firebase-perf'
-    id 'org.jetbrains.kotlin.android' version "$kotlin_version"
+    id 'org.jetbrains.kotlin.android' version '1.9.0'
 }
 
 android {
     namespace 'com.happym.mathsquare'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.happym.mathsquare"
         minSdk 24
-        targetSdk 34
+        targetSdk 33
         versionCode 1
         versionName "alpha-v0.0.1"
 
@@ -62,7 +50,10 @@ implementation 'org.apache.commons:commons-csv:1.12.0'
 // Firebase
 implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-auth") {
+        exclude group: 'androidx.credentials', module: 'credentials'
+        exclude group: 'androidx.credentials', module: 'credentials-play-services-auth'
+    }
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-messaging")
@@ -74,9 +65,18 @@ implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
     implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.cardview:cardview:1.0.0")
-    implementation("androidx.browser:browser:1.7.0")
-    implementation 'androidx.activity:activity:1.8.0'
+    implementation("androidx.browser:browser:1.4.0")
+    implementation 'androidx.activity:activity:1.7.2'
     implementation 'androidx.navigation:navigation-fragment:2.6.0'
     implementation 'androidx.navigation:navigation-ui:2.6.0'
+    
+    // Force compatible versions to avoid compileSdk 34 requirement
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.activity:activity:1.7.2'
+            force 'androidx.activity:activity-ktx:1.7.2'
+            force 'androidx.browser:browser:1.4.0'
+        }
+    }
 
 }

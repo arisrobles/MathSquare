@@ -302,6 +302,12 @@ if (operationList == null || operationList.isEmpty()) {
 
         if("Quiz".equals(gameType) && !isFirebaseQuiz) {
             // Only do CSV quiz logic if not Firebase quiz
+            // Defensive check: ensure difficulty is set for CSV quizzes
+            if (difficulty == null || difficulty.isEmpty()) {
+                Log.e("CSVQuiz", "⚠️ Difficulty is empty for CSV quiz! Defaulting to 'Easy'");
+                difficulty = "Easy"; // Default to Easy if not provided
+            }
+            Log.d("CSVQuiz", "Starting CSV quiz with difficulty: " + difficulty + ", operations: " + operationList);
             Toast.makeText(this, operationList.toString() , Toast.LENGTH_SHORT)
                     .show();
 
@@ -394,6 +400,12 @@ private void switchOperation(String difficulty) {
 
 
 private void setupProblemSetList(String difficulty, String operation) {
+    // Defensive check: ensure difficulty is not empty
+    if (difficulty == null || difficulty.isEmpty()) {
+        Log.e("CSVQuiz", "⚠️ setupProblemSetList called with empty difficulty! Operation: " + operation);
+        difficulty = "Easy"; // Default to Easy
+    }
+    
     BufferedReader bufferedReader;
     CSVProcessor csvProcessor = new CSVProcessor();
     String fileName = "";
@@ -501,7 +513,9 @@ private void setupProblemSetList(String difficulty, String operation) {
     int numProblemsToAdd = Math.min(5, availableProblems.size());
 
     if (numProblemsToAdd == 0) {
-        Toast.makeText(this, "No " + operation + " problems found for difficulty: " + difficulty, Toast.LENGTH_LONG).show();
+        android.util.Log.e("CSVQuiz", "❌ No problems found for operation: " + operation + ", difficulty: " + actualDifficulty);
+        Toast.makeText(this, "No " + operation + " problems found for difficulty: " + actualDifficulty + ". Please check CSV files.", Toast.LENGTH_LONG).show();
+        finish(); // Exit quiz if no problems available
         return;
     }
 
@@ -540,6 +554,13 @@ operationTextView.setText(nextOperation);
 }
 
 private void generateNewQuestionList(int currentQIndex, List<MathProblem> sourceQuestions) {
+    if (sourceQuestions == null || sourceQuestions.isEmpty()) {
+        android.util.Log.e("QuestionGeneration", "Problem set is empty or null!");
+        Toast.makeText(this, "No questions available. Please try again.", Toast.LENGTH_LONG).show();
+        finish();
+        return;
+    }
+    
     if (currentQIndex < sourceQuestions.size()) {
         MathProblem currentProblem = sourceQuestions.get(currentQIndex);
 
@@ -584,7 +605,66 @@ private void generateNewQuestionList(int currentQIndex, List<MathProblem> source
             String[] formattedGivens = currentProblem.getFormattedGivenNumbers();
             givenOneTextView.setText(formattedGivens[0]);
             givenTwoTextView.setText(formattedGivens.length > 1 ? formattedGivens[1] : "");
-            // text_operator is already set in setupProblemSetList
+            
+            // Set operator based on the actual problem's operation (not the expected operation)
+            // This ensures the operator matches the question
+            String problemOperation = currentProblem.getOperation();
+            android.util.Log.d("QuestionDisplay", "Problem operation from CSV: '" + problemOperation + "'");
+            
+            if (problemOperation != null) {
+                String opLower = problemOperation.toLowerCase().trim();
+                android.util.Log.d("QuestionDisplay", "Normalized operation: '" + opLower + "'");
+                
+                switch (opLower) {
+                    case "addition":
+                        text_operator.setText("+");
+                        // Update operation header to match
+                        operationTextView.setText("Addition");
+                        android.util.Log.d("QuestionDisplay", "Set operator to + and header to Addition");
+                        break;
+                    case "subtraction":
+                        text_operator.setText("-");
+                        // Update operation header to match
+                        operationTextView.setText("Subtraction");
+                        android.util.Log.d("QuestionDisplay", "Set operator to - and header to Subtraction");
+                        break;
+                    case "multiplication":
+                        text_operator.setText("×");
+                        // Update operation header to match
+                        operationTextView.setText("Multiplication");
+                        android.util.Log.d("QuestionDisplay", "Set operator to × and header to Multiplication");
+                        break;
+                    case "division":
+                        text_operator.setText("÷");
+                        // Update operation header to match
+                        operationTextView.setText("Division");
+                        android.util.Log.d("QuestionDisplay", "Set operator to ÷ and header to Division");
+                        break;
+                    default:
+                        // Fallback: try to infer from question text or use what was set
+                        android.util.Log.w("QuestionDisplay", "Unknown operation: '" + problemOperation + "', using fallback");
+                        // Try to infer operator from question text if possible
+                        String questionText = currentProblem.getQuestion();
+                        if (questionText != null) {
+                            if (questionText.contains("+")) {
+                                text_operator.setText("+");
+                                operationTextView.setText("Addition");
+                            } else if (questionText.contains("-")) {
+                                text_operator.setText("-");
+                                operationTextView.setText("Subtraction");
+                            } else if (questionText.contains("×") || questionText.contains("*")) {
+                                text_operator.setText("×");
+                                operationTextView.setText("Multiplication");
+                            } else if (questionText.contains("÷") || questionText.contains("/")) {
+                                text_operator.setText("÷");
+                                operationTextView.setText("Division");
+                            }
+                        }
+                        break;
+                }
+            } else {
+                android.util.Log.e("QuestionDisplay", "Problem operation is null!");
+            }
         }
 
         List<String> choicesList = currentProblem.getFormattedChoices();
@@ -979,7 +1059,24 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
             questionIndexInOperation = currentQuestionIndex;
         }
         
+        // Safety check: ensure problemSet is not empty and index is valid
+        if (problemSet == null || problemSet.isEmpty()) {
+            android.util.Log.e("QuizError", "Problem set is empty when checking answer!");
+            Toast.makeText(this, "Error: No questions available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        
+        if (questionIndexInOperation >= problemSet.size()) {
+            android.util.Log.e("QuizError", "Question index " + questionIndexInOperation + " is out of bounds! ProblemSet size: " + problemSet.size());
+            Toast.makeText(this, "Error: Question index out of bounds", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        
         MathProblem currentProblem = problemSet.get(questionIndexInOperation);
+        android.util.Log.d("QuizAnswer", "Checking answer for question " + questionIndexInOperation + " of " + problemSet.size() + 
+            ", Operation: " + currentProblem.getOperation() + ", CurrentQuestionIndex: " + currentQuestionIndex);
         currentProblem.setUserAnswer(String.valueOf(btnText));
         answeredQuestions.add(currentProblem);
 
@@ -1089,7 +1186,8 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
                 }
 
                 // Check if we need to switch operations (every 5 questions)
-                if (currentQuestionIndex % 5 == 0 && !operationList.isEmpty()) {
+                // Don't switch at index 0 (first question), only after completing 5 questions (at index 5, 10, etc.)
+                if (currentQuestionIndex > 0 && currentQuestionIndex % 5 == 0 && !operationList.isEmpty()) {
                     switchOperation(difficulty);
                     return;
                 }
@@ -1117,11 +1215,40 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
                 } else {
                     // CSV quiz: check if there are more questions to generate.
                     int totalExpectedQuestions = operationList.size() * 5; // 5 questions per operation
+                    android.util.Log.d("CSVQuiz", "CurrentQuestionIndex: " + currentQuestionIndex + ", TotalExpected: " + totalExpectedQuestions + ", ProblemSet size: " + problemSet.size());
+                    
                     if (currentQuestionIndex < totalExpectedQuestions) {
                         // Calculate the question index within the current operation (0-4)
                         int questionIndexInCurrentOperation = currentQuestionIndex % 5;
-                        generateNewQuestionList(questionIndexInCurrentOperation, problemSet);
+                        android.util.Log.d("CSVQuiz", "Question index in current operation: " + questionIndexInCurrentOperation);
+                        
+                        // Check if we need to switch operations (at the start of a new operation set)
+                        if (questionIndexInCurrentOperation == 0 && currentQuestionIndex > 0) {
+                            // We've completed 5 questions, switch to next operation
+                            android.util.Log.d("CSVQuiz", "Switching to next operation after completing 5 questions");
+                            switchOperation(difficulty);
+                            return;
+                        }
+                        
+                        // Check if problemSet is empty or doesn't have enough questions
+                        if (problemSet.isEmpty() || questionIndexInCurrentOperation >= problemSet.size()) {
+                            android.util.Log.w("CSVQuiz", "ProblemSet is empty or index out of bounds. Loading new operation.");
+                            // Get current operation based on which questions we've done
+                            int operationIndex = currentQuestionIndex / 5;
+                            if (operationIndex < operationList.size()) {
+                                String currentOp = operationList.get(operationIndex);
+                                android.util.Log.d("CSVQuiz", "Loading operation: " + currentOp + " (index: " + operationIndex + ")");
+                                setupProblemSetList(difficulty, currentOp);
+                                // After setupProblemSetList, updateUI will be called which generates the first question
+                                return; // Exit early, updateUI will handle question generation
+                            }
+                        } else {
+                            // Generate the next question from current problemSet
+                            android.util.Log.d("CSVQuiz", "Generating question " + questionIndexInCurrentOperation + " from problemSet");
+                            generateNewQuestionList(questionIndexInCurrentOperation, problemSet);
+                        }
                     } else {
+                        android.util.Log.d("CSVQuiz", "All questions completed!");
                         Toast.makeText(this, "All Questions Completed!", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -1148,7 +1275,15 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
         // Calculate correct total questions based on game type
         int totalQuestions;
         if ("Quiz".equals(gameType)) {
-            totalQuestions = operationList.size() * 5; // 5 questions per operation
+            // Check if this is a Firebase quiz
+            boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+            if (isFirebaseQuiz) {
+                // Firebase quiz: use actual problemSet size
+                totalQuestions = problemSet.size();
+            } else {
+                // CSV quiz: 5 questions per operation
+                totalQuestions = operationList.size() * 5;
+            }
         } else {
             totalQuestions = problemSet.size(); // For non-quiz games
         }
@@ -1192,6 +1327,17 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
         intent.putExtra("EXTRA_TOTAL", totalQuestions);
         intent.putExtra("EXTRA_OPERATIONTEXT", operationText);
         intent.putExtra("EXTRA_DIFFICULTY", difficulty);
+        
+        // Pass Firebase quiz metadata and questions if this is a Firebase quiz
+        boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+        if (isFirebaseQuiz) {
+            intent.putExtra("isFirebaseQuiz", true);
+            intent.putExtra("firebaseQuizTitle", getIntent().getStringExtra("firebaseQuizTitle"));
+            intent.putExtra("firebaseQuizNumber", getIntent().getStringExtra("firebaseQuizNumber"));
+            // CRITICAL: Pass the Firebase questions so they can be reused on retry
+            intent.putParcelableArrayListExtra("firebaseQuestions", new ArrayList<>(problemSet));
+            Log.d("FirebaseQuiz", "Passing " + problemSet.size() + " Firebase questions to Results");
+        }
 
         // Debug logging to track score being passed
         android.util.Log.d("ScoreDebug", "Passing score to Results: " + score + " out of " + totalQuestions);
@@ -1360,11 +1506,8 @@ private void playEffectSound(String fileName) {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        Intent intent = new Intent(MultipleChoicePage.this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        finish();
+        // Show pause dialog instead of directly exiting
+        showPauseDialog();
     }
 
     private void animateCorrectAnswer(Button button) {

@@ -2,12 +2,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
 
-    <item android:title="Create a user"
+    <item android:title="Users"
         android:icon="@drawable/baseline_person_24"
         android:id="@+id/user"
         android:textColor="@color/colorAccent"
         />
 
+    <item android:title="Sections"
+        android:icon="@drawable/ic_librarybooks"
+        android:id="@+id/sections"
+        android:textColor="@color/colorAccent"
+        />
+
+    <item android:title="Profile"
+        android:icon="@drawable/baseline_person_24"
+        android:id="@+id/profile"
+        android:textColor="@color/colorAccent"
+        />
 
     <item android:title="Logout"
         android:icon="@drawable/baseline_power_settings_new_24"

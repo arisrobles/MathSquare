@@ -80,7 +80,39 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         Log.d("QuizCreator", "onBackPressed called");
-        super.onBackPressed();
+        // Check if there are unsaved changes
+        if (hasUnsavedChanges()) {
+            com.happym.mathsquare.utils.BackButtonHandler.showExitConfirmation(
+                this,
+                "Exit Quiz Creator",
+                "You have unsaved changes. Are you sure you want to exit?",
+                () -> finish()
+            );
+        } else {
+            super.onBackPressed();
+        }
+    }
+    
+    /**
+     * Check if there are unsaved changes in the quiz form
+     */
+    private boolean hasUnsavedChanges() {
+        // If in edit mode, always show confirmation (we're modifying existing data)
+        if (isEditMode) {
+            return true;
+        }
+        
+        // Check if quiz title or number has been entered
+        String title = quizTitleEditText != null ? quizTitleEditText.getText().toString().trim() : "";
+        String number = quizNumberEditText != null ? quizNumberEditText.getText().toString().trim() : "";
+        
+        // Check if questions have been added
+        boolean hasQuestions = questionsList != null && !questionsList.isEmpty();
+        
+        // Check if any form field has been filled
+        boolean hasFormData = !title.isEmpty() || !number.isEmpty() || hasQuestions;
+        
+        return hasFormData;
     }
     
     @Override

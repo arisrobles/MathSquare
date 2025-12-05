@@ -147,25 +147,31 @@ setupWebView();
         MusicManager.pause();
     }
 
-    // Method to open PDF tutorial with progression check
+    // Method to open PDF tutorial with progression check (grade-specific)
     private void checkAndOpenTutorial(String pdfFileName, String tutorialName) {
         TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         
-        // Check if tutorial is accessible (previous one completed)
-        if (!tracker.canAccessTutorial(tutorialName)) {
-            String previousTut = getPreviousTutorial(tutorialName);
-            Toast.makeText(this, 
-                "Please complete the " + previousTut + " tutorial first!", 
-                Toast.LENGTH_LONG).show();
-            return;
-        }
-        
-        // Check grade level access
+        // Check grade level access first
         String grade = sharedPreferences.getGrade(this);
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
             Toast.makeText(this, 
                 "This tutorial is not available for your grade level", 
                 Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        // Check if tutorial is accessible (previous one completed) - grade-specific
+        if (!tracker.canAccessTutorial(tutorialName)) {
+            String previousTut = tracker.getPreviousTutorial(tutorialName);
+            if (!previousTut.isEmpty()) {
+                Toast.makeText(this, 
+                    "Please complete the " + previousTut + " tutorial first!", 
+                    Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, 
+                    "Please complete the previous tutorial in your grade's sequence first!", 
+                    Toast.LENGTH_LONG).show();
+            }
             return;
         }
         
@@ -176,16 +182,6 @@ setupWebView();
         
         // Mark as completed when opened (you can also mark when finished)
         tracker.markTutorialCompleted(tutorialName);
-    }
-    
-    private String getPreviousTutorial(String current) {
-        String[] order = {"addition", "subtraction", "multiplication", "division", "decimals", "percentage"};
-        for (int i = 1; i < order.length; i++) {
-            if (order[i].equals(current.toLowerCase())) {
-                return order[i - 1];
-            }
-        }
-        return "";
     }
     
     // Filter tutorials based on grade level

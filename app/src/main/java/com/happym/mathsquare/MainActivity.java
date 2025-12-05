@@ -17,6 +17,7 @@ import android.animation.AnimatorSet;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -46,6 +47,7 @@ import android.widget.FrameLayout;
 import java.util.Random;
 
 import com.happym.mathsquare.Animation.*;
+import com.happym.mathsquare.utils.SessionManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout btnPlayQuiz = findViewById(R.id.btn_play_quiz);
         LinearLayout btnLogOut = findViewById(R.id.btn_logout);
         LinearLayout btnScoreHistory = findViewById(R.id.btn_score_history);
+        LinearLayout btnProfile = findViewById(R.id.btn_profile);
 
         animateButtonFocus(btnLogOut);
         animateButtonFocus(btnPlay);
@@ -83,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
         animateButtonFocus(btnLogOut);
         if (btnScoreHistory != null) {
             animateButtonFocus(btnScoreHistory);
+        }
+        if (btnProfile != null) {
+            animateButtonFocus(btnProfile);
         }
         startRotationAnimation(txtTitle);
 
@@ -95,9 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
             Toast.makeText(this, "Hi " + firstName + " " + lastName + "! Ready to play?", Toast.LENGTH_SHORT).show();
 
-            // Show score history button for logged-in students
+            // Show score history and profile buttons for logged-in students
             if (btnScoreHistory != null) {
                 btnScoreHistory.setVisibility(View.VISIBLE);
+            }
+            if (btnProfile != null) {
+                btnProfile.setVisibility(View.VISIBLE);
             }
 
         } else {
@@ -105,6 +114,9 @@ public class MainActivity extends AppCompatActivity {
             btnPlayQuiz.setVisibility(View.GONE);
             if (btnScoreHistory != null) {
                 btnScoreHistory.setVisibility(View.GONE);
+            }
+            if (btnProfile != null) {
+                btnProfile.setVisibility(View.GONE);
             }
         }
         
@@ -117,6 +129,18 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 stopButtonFocusAnimation(btnScoreHistory);
                 animateButtonFocus(btnScoreHistory);
+            });
+        }
+        
+        // Profile button click listener
+        if (btnProfile != null) {
+            btnProfile.setOnClickListener(view -> {
+                animateButtonClick(btnProfile);
+                Intent intent = new Intent(MainActivity.this, StudentProfileActivity.class);
+                playSound("click.mp3");
+                startActivity(intent);
+                stopButtonFocusAnimation(btnProfile);
+                animateButtonFocus(btnProfile);
             });
         }
 
@@ -133,17 +157,8 @@ public class MainActivity extends AppCompatActivity {
         btnLogOut.setOnClickListener(
                 view -> {
                     animateButtonClick(btnLogOut);
-                    Intent intent = new Intent(this, signInUp.class);
-                    sharedPreferences.StudentIsSetLoggedIn(this, false);
-                    sharedPreferences.setLoggedIn(this, false);
-                    sharedPreferences.clearSection(this);
-                    sharedPreferences.clearGrade(this);
-                    sharedPreferences.clearFirstName(this);
-                    sharedPreferences.clearLastName(this);
                     playSound("click.mp3");
-                    startActivity(intent);
-                    finish();
-                    Toast.makeText(this, "Logout successfully!", Toast.LENGTH_SHORT).show();
+                    showLogoutConfirmationDialog();
                     stopButtonFocusAnimation(btnLogOut);
                     animateButtonFocus(btnLogOut);
                 });
@@ -335,5 +350,23 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
 
         MusicManager.pause();
+    }
+    
+    /**
+     * Show logout confirmation dialog
+     */
+    private void showLogoutConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.RoundedAlertDialog);
+        builder.setTitle("Logout");
+        builder.setMessage("Are you sure you want to logout?");
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            SessionManager.logoutStudent(this);
+        });
+        builder.setNegativeButton("No", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        dialog.show();
     }
 }

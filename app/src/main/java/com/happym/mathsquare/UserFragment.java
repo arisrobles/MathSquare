@@ -11,9 +11,13 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -36,6 +40,7 @@ import com.happym.mathsquare.Model.User;
 import com.happym.mathsquare.utils.TeacherMigrationUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -571,6 +576,9 @@ private void stopButtonFocusAnimation(View button) {
                             String email = doc.getString("email");
                             String originalEmail = doc.getString("originalEmail");
                             String documentId = doc.getId();
+                            // Get grade and section if assigned
+                            String assignedGrade = doc.getString("assignedGrade");
+                            String assignedSection = doc.getString("assignedSection");
 
                             Log.d("FETCH_TEACHER", "Processing TeacherProfile: " + firstName + " | " + email + " | " + originalEmail);
 
@@ -581,8 +589,15 @@ private void stopButtonFocusAnimation(View button) {
                                 // Check for duplicates before adding
                                 if (!isTeacherAlreadyAdded(displayEmail)) {
                                     User user = new User(firstName, displayEmail != null ? displayEmail : "N/A", "Teacher", documentId);
+                                    // Set grade and section if assigned
+                                    if (assignedGrade != null) {
+                                        user.setGrade(assignedGrade);
+                                    }
+                                    if (assignedSection != null) {
+                                        user.setSection(assignedSection);
+                                    }
                                     allUsers.add(user);
-                                    Log.d("FETCH_TEACHER", "Added teacher from TeacherProfiles: " + firstName + " (" + displayEmail + ")");
+                                    Log.d("FETCH_TEACHER", "Added teacher from TeacherProfiles: " + firstName + " (" + displayEmail + ") Grade: " + assignedGrade + ", Section: " + assignedSection);
                                 } else {
                                     Log.d("FETCH_TEACHER", "Teacher already exists, skipping: " + firstName);
                                 }
@@ -955,8 +970,13 @@ private void stopButtonFocusAnimation(View button) {
                 gradeText.setText(user.getGrade());
 
                 // Set column visibility based on current filter
-                if ("TEACHER".equals(currentFilter) || "ADMIN".equals(currentFilter)) {
-                    // For teachers and admins: show Name, Email, Type only
+                if ("TEACHER".equals(currentFilter)) {
+                    // For teachers: show Name, Email, Type, Grade, Section
+                    emailText.setVisibility(View.VISIBLE);
+                    sectionText.setVisibility(View.VISIBLE);
+                    gradeText.setVisibility(View.VISIBLE);
+                } else if ("ADMIN".equals(currentFilter)) {
+                    // For admins: show Name, Email, Type only
                     emailText.setVisibility(View.VISIBLE);
                     sectionText.setVisibility(View.GONE);
                     gradeText.setVisibility(View.GONE);
@@ -1031,6 +1051,14 @@ private void stopButtonFocusAnimation(View button) {
                                 toggleAllRows(isChecked1);
                             });
                         }
+                    });
+                }
+                
+                // Add edit functionality for teachers (only visible when viewing teachers)
+                if ("Teacher".equals(user.getAccountType()) && "TEACHER".equals(currentFilter)) {
+                    // Make the row clickable to edit teacher
+                    row.setOnClickListener(v -> {
+                        showEditTeacherDialog(user);
                     });
                 }
 
@@ -1398,6 +1426,154 @@ private void stopButtonFocusAnimation(View button) {
     public void refreshStudentData() {
         Log.d("REFRESH", "Manual refresh of student data requested");
         fetchStudentAccounts();
+    }
+    
+    /**
+     * Shows dialog to edit teacher's assigned grade and section
+     */
+    private void showEditTeacherDialog(User teacher) {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_teacher, null);
+        
+        Spinner gradeSpinner = dialogView.findViewById(R.id.spinnerGrade);
+        Spinner sectionSpinner = dialogView.findViewById(R.id.spinnerSection);
+        TextView teacherNameText = dialogView.findViewById(R.id.textTeacherName);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        
+        teacherNameText.setText(teacher.getName());
+        
+        // Setup grade spinner
+        List<String> grades = Arrays.asList("Select Grade", "1", "2", "3", "4", "5", "6");
+        ArrayAdapter<String> gradeAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, grades);
+        gradeAdapter.setDropDownViewResource(R.layout.spinner_item);
+        gradeSpinner.setAdapter(gradeAdapter);
+        
+        // Set current grade if assigned
+        if (teacher.getGrade() != null && !teacher.getGrade().equals("N/A")) {
+            int gradePosition = grades.indexOf(teacher.getGrade());
+            if (gradePosition > 0) {
+                gradeSpinner.setSelection(gradePosition);
+            }
+        }
+        
+        // Load sections when grade is selected
+        gradeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) {
+                    String selectedGrade = grades.get(position);
+                    loadSectionsForGrade(sectionSpinner, selectedGrade, teacher.getSection());
+                } else {
+                    sectionSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, new ArrayList<>()));
+                }
+            }
+            
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        
+        // Load sections if grade is already set
+        if (teacher.getGrade() != null && !teacher.getGrade().equals("N/A")) {
+            loadSectionsForGrade(sectionSpinner, teacher.getGrade(), teacher.getSection());
+        }
+        
+        AlertDialog dialog = new AlertDialog.Builder(requireContext(), R.style.RoundedAlertDialog)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create();
+        
+        // Set dialog window properties for better appearance
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        
+        btnSave.setOnClickListener(v -> {
+            int gradePos = gradeSpinner.getSelectedItemPosition();
+            int sectionPos = sectionSpinner.getSelectedItemPosition();
+            
+            if (gradePos == 0) {
+                Toast.makeText(requireContext(), "Please select a grade", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (sectionPos == 0 || sectionSpinner.getAdapter().getCount() == 0) {
+                Toast.makeText(requireContext(), "Please select a section", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            String selectedGrade = grades.get(gradePos);
+            String selectedSection = (String) sectionSpinner.getSelectedItem();
+            
+            // Update teacher in Firebase
+            updateTeacherGradeSection(teacher, selectedGrade, selectedSection);
+            dialog.dismiss();
+        });
+        
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    /**
+     * Load sections for a specific grade
+     */
+    private void loadSectionsForGrade(Spinner sectionSpinner, String grade, String currentSection) {
+        int gradeNumber;
+        try {
+            gradeNumber = Integer.parseInt(grade);
+        } catch (NumberFormatException e) {
+            return;
+        }
+        
+        db.collection("Sections")
+            .whereEqualTo("Grade_Number", gradeNumber)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    List<String> sections = new ArrayList<>();
+                    sections.add("Select Section");
+                    
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        String section = doc.getString("Section");
+                        if (section != null) {
+                            sections.add(section);
+                        }
+                    }
+                    
+                    ArrayAdapter<String> sectionAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, sections);
+                    sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                    sectionSpinner.setAdapter(sectionAdapter);
+                    
+                    // Set current section if assigned
+                    if (currentSection != null && !currentSection.equals("N/A")) {
+                        int sectionPosition = sections.indexOf(currentSection);
+                        if (sectionPosition > 0) {
+                            sectionSpinner.setSelection(sectionPosition);
+                        }
+                    }
+                }
+            });
+    }
+    
+    /**
+     * Update teacher's assigned grade and section in Firebase
+     */
+    private void updateTeacherGradeSection(User teacher, String grade, String section) {
+        db.collection("TeacherProfiles")
+            .document(teacher.getDocId())
+            .update("assignedGrade", grade, "assignedSection", section)
+            .addOnSuccessListener(aVoid -> {
+                // Update local user object
+                teacher.setGrade(grade);
+                teacher.setSection(section);
+                
+                // Refresh the table
+                fetchAllUsers();
+                Toast.makeText(requireContext(), "Teacher updated successfully", Toast.LENGTH_SHORT).show();
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(requireContext(), "Error updating teacher: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
     }
 
     @Override

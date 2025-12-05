@@ -32,7 +32,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.happym.mathsquare.dashboard_StudentsPanel;
 import com.happym.mathsquare.dashboard_SectionPanel;
-import com.happym.mathsquare.dialog.CreateSection;
 import java.io.IOException;
 
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -50,12 +49,12 @@ import java.util.List;
 
 import com.happym.mathsquare.Model.Sections;
 import com.happym.mathsquare.Model.Student;
+import com.happym.mathsquare.utils.SessionManager;
 
 public class Dashboard extends AppCompatActivity {
     private FirebaseFirestore db;
-    private CreateSection createSectionDialog;
     private String teacherFirstName; // This should be initialized with the teacher's first name
-    private RelativeLayout quizhistory_panel, sections_panel;
+    private RelativeLayout quizhistory_panel;
     private MediaPlayer bgMediaPlayer;
     private MediaPlayer soundEffectPlayer;
     private TextView firstSection, firstGrade;
@@ -83,9 +82,6 @@ public class Dashboard extends AppCompatActivity {
           initializeSwitchListeners();
 
           quizhistory_panel = findViewById(R.id.quizhistory_panel);
-           sections_panel = findViewById(R.id.sections_panel);
-
-           createSectionDialog = new CreateSection();
 
         quizhistory_panel.setOnClickListener(v -> {
             playSound("click.mp3");
@@ -93,20 +89,16 @@ public class Dashboard extends AppCompatActivity {
             startActivity(intent);
         });
 
-        sections_panel.setOnClickListener(v -> {
-                playSound("click.mp3");
-            Intent intent = new Intent(this, dashboard_SectionPanel.class);
-            startActivity(intent);
-        });
-
         // Setup Bottom Navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        ScrollView scrollView = findViewById(R.id.scroll);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             playSound("click.mp3");
             int itemId = item.getItemId();
             
-            if (itemId == R.id.add_section) {
-                createSectionDialog.show(getSupportFragmentManager(), "PauseDialog");
+            if (itemId == R.id.dashboard) {
+                // Scroll to top of dashboard
+                scrollView.smoothScrollTo(0, 0);
                 return true;
             } else if (itemId == R.id.student_numbers) {
                 showSectionSelectionDialog();
@@ -119,26 +111,20 @@ public class Dashboard extends AppCompatActivity {
                 Intent intent = new Intent(this, TeacherQuizCreatorActivity.class);
                 startActivity(intent);
                 return true;
+            } else if (itemId == R.id.profile) {
+                Intent intent = new Intent(this, TeacherProfileActivity.class);
+                startActivity(intent);
+                return true;
             }
             return false;
         });
 
         btnLogOut.setOnClickListener(view -> {
                animateButtonClick(btnLogOut);
-               Intent intent = new Intent(this, signInUp.class);
-                    sharedPreferences.StudentIsSetLoggedIn(this, false);
-                    sharedPreferences.setLoggedIn(this, false);
-                    sharedPreferences.clearSection(this);
-                    sharedPreferences.clearGrade(this);
-                    sharedPreferences.clearFirstName(this);
-                    sharedPreferences.clearLastName(this);
-                    playSound("click.mp3");
-                    startActivity(intent);
-                    finish();
-                    Toast.makeText(this, "Logout successfully!", Toast.LENGTH_SHORT).show();
-                    stopButtonFocusAnimation(btnLogOut);
-                    animateButtonFocus(btnLogOut);
-
+               playSound("click.mp3");
+               showLogoutConfirmationDialog();
+               stopButtonFocusAnimation(btnLogOut);
+               animateButtonFocus(btnLogOut);
         });
 
     }
@@ -149,30 +135,52 @@ protected void onStart() {
     listenToTeacherSections(firstGrade, firstSection);
 }
 
+   @Override
+protected void onStop() {
+    super.onStop();
+    // Remove listener to prevent memory leaks
+    if (sectionsListener != null) {
+        sectionsListener.remove();
+        sectionsListener = null;
+    }
+}
+
+    /**
+     * Fetches and displays the teacher's assigned grade and section from their profile
+     */
     private void listenToTeacherSections(TextView gradeTextView, TextView sectionTextView) {
-    sectionsListener = db.collection("Sections")
-            .orderBy("timestamp", Query.Direction.DESCENDING) // Sort by most recent
-            .limit(1) // Only get the latest section
+        // Fetch teacher's assigned grade and section from TeacherProfiles
+        sectionsListener = db.collection("TeacherProfiles")
+            .whereEqualTo("email", teacherEmail)
+            .limit(1)
             .addSnapshotListener((queryDocumentSnapshots, e) -> {
                 if (e != null) {
-                    Toast.makeText(this, "Error fetching section: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e("Dashboard", "Error fetching teacher profile: " + e.getMessage());
+                    // Set default values if error occurs
+                    gradeTextView.setText("N/A");
+                    sectionTextView.setText("N/A");
                     return;
                 }
 
                 if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
-                    DocumentSnapshot latestDocument = queryDocumentSnapshots.getDocuments().get(0);
+                    DocumentSnapshot teacherDoc = queryDocumentSnapshots.getDocuments().get(0);
+                    String assignedGrade = teacherDoc.getString("assignedGrade");
+                    String assignedSection = teacherDoc.getString("assignedSection");
 
-                    Long gradeNumLong = latestDocument.getLong("Grade_Number");
-                    String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
-                    String section = latestDocument.getString("Section");
-                    String documentId = latestDocument.getId();
-
-                    if (grade != null && section != null) {
-                        gradeTextView.setText(grade);
-                        sectionTextView.setText(section);
+                    if (assignedGrade != null && assignedSection != null && 
+                        !assignedGrade.isEmpty() && !assignedSection.isEmpty()) {
+                        // Display the assigned grade and section
+                        gradeTextView.setText(assignedGrade);
+                        sectionTextView.setText(assignedSection);
+                    } else {
+                        // No assigned grade/section, display default values
+                        gradeTextView.setText("N/A");
+                        sectionTextView.setText("N/A");
                     }
                 } else {
-                    Toast.makeText(this, "No sections found.", Toast.LENGTH_SHORT).show();
+                    // Teacher profile not found, display default values
+                    gradeTextView.setText("N/A");
+                    sectionTextView.setText("N/A");
                 }
             });
 }
@@ -330,8 +338,69 @@ private String extractGradeNumber(String gradeString) {
 
     /**
      * Shows a dialog to select a section before opening Student Number Manager
+     * If teacher has assigned grade/section, skip selection and go directly
      */
     private void showSectionSelectionDialog() {
+        // First check if teacher has assigned grade and section
+        db.collection("TeacherProfiles")
+            .whereEqualTo("email", teacherEmail)
+            .limit(1)
+            .get()
+            .addOnCompleteListener(teacherTask -> {
+                if (teacherTask.isSuccessful() && teacherTask.getResult() != null && !teacherTask.getResult().isEmpty()) {
+                    QueryDocumentSnapshot teacherDoc = (QueryDocumentSnapshot) teacherTask.getResult().getDocuments().get(0);
+                    String assignedGrade = teacherDoc.getString("assignedGrade");
+                    String assignedSection = teacherDoc.getString("assignedSection");
+                    
+                    // If teacher has assigned grade and section, use them directly
+                    if (assignedGrade != null && assignedSection != null && 
+                        !assignedGrade.isEmpty() && !assignedSection.isEmpty()) {
+                        // Find the section document ID
+                        int gradeNumber;
+                        try {
+                            gradeNumber = Integer.parseInt(assignedGrade);
+                        } catch (NumberFormatException e) {
+                            // Invalid grade, fall back to selection dialog
+                            showSectionSelectionDialogFallback();
+                            return;
+                        }
+                        
+                        db.collection("Sections")
+                            .whereEqualTo("Grade_Number", gradeNumber)
+                            .whereEqualTo("Section", assignedSection)
+                            .limit(1)
+                            .get()
+                            .addOnCompleteListener(sectionTask -> {
+                                if (sectionTask.isSuccessful() && sectionTask.getResult() != null && !sectionTask.getResult().isEmpty()) {
+                                    QueryDocumentSnapshot sectionDoc = (QueryDocumentSnapshot) sectionTask.getResult().getDocuments().get(0);
+                                    String sectionId = sectionDoc.getId();
+                                    
+                                    // Go directly to StudentNumberManagerActivity
+                                    Intent intent = new Intent(this, StudentNumberManagerActivity.class);
+                                    intent.putExtra("sectionName", assignedSection);
+                                    intent.putExtra("grade", assignedGrade);
+                                    intent.putExtra("sectionId", sectionId);
+                                    startActivity(intent);
+                                } else {
+                                    // Section not found, fall back to selection dialog
+                                    showSectionSelectionDialogFallback();
+                                }
+                            });
+                    } else {
+                        // No assigned grade/section, show selection dialog
+                        showSectionSelectionDialogFallback();
+                    }
+                } else {
+                    // Teacher profile not found, show selection dialog
+                    showSectionSelectionDialogFallback();
+                }
+            });
+    }
+    
+    /**
+     * Fallback: Shows dialog to select a section (original behavior)
+     */
+    private void showSectionSelectionDialogFallback() {
         // Fetch all sections for the teacher
         db.collection("Sections")
             .orderBy("Grade_Number", Query.Direction.ASCENDING)
@@ -382,21 +451,22 @@ private String extractGradeNumber(String gradeString) {
         Button cancelButton = dialogView.findViewById(R.id.btnCancel);
         
         // Setup RecyclerView
+        Dashboard dashboardActivity = this;
         SectionSelectionAdapter adapter = new SectionSelectionAdapter(sectionsList, section -> {
             String gradeNumber = extractGradeNumber(section.getGrade());
             
             if (gradeNumber != null) {
-                Intent intent = new Intent(this, StudentNumberManagerActivity.class);
+                Intent intent = new Intent(dashboardActivity, StudentNumberManagerActivity.class);
                 intent.putExtra("sectionName", section.getSection());
                 intent.putExtra("grade", gradeNumber);
                 intent.putExtra("sectionId", section.getDocId());
-                startActivity(intent);
+                dashboardActivity.startActivity(intent);
                 // Dismiss dialog after selection
                 if (sectionSelectionDialog != null) {
                     sectionSelectionDialog.dismiss();
                 }
             } else {
-                Toast.makeText(this, "Invalid grade format: " + section.getGrade(), Toast.LENGTH_LONG).show();
+                Toast.makeText(dashboardActivity, "Invalid grade format: " + section.getGrade(), Toast.LENGTH_LONG).show();
             }
         });
         
@@ -456,7 +526,6 @@ private String extractGradeNumber(String gradeString) {
             holder.sectionDetailsText.setText("Tap to manage student numbers");
             
             holder.itemView.setOnClickListener(v -> {
-                playSound("click.mp3");
                 if (listener != null) {
                     listener.onSectionClick(section);
                 }
@@ -468,7 +537,7 @@ private String extractGradeNumber(String gradeString) {
             return sections.size();
         }
         
-        private class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder {
             TextView sectionNameText, sectionDetailsText;
             
             ViewHolder(View itemView) {
@@ -477,6 +546,24 @@ private String extractGradeNumber(String gradeString) {
                 sectionDetailsText = itemView.findViewById(R.id.sectionDetailsText);
             }
         }
+    }
+    
+    /**
+     * Show logout confirmation dialog
+     */
+    private void showLogoutConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.RoundedAlertDialog);
+        builder.setTitle("Logout");
+        builder.setMessage("Are you sure you want to logout?");
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            SessionManager.logoutTeacher(this);
+        });
+        builder.setNegativeButton("No", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        dialog.show();
     }
 
 }

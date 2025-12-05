@@ -17,6 +17,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -105,7 +106,14 @@ public class Results extends AppCompatActivity {
 
         selHeart = getIntent().getIntExtra("heartLimit", 3);
         selTimer = getIntent().getIntExtra("timerLimit", 10);
-        String gameType = getIntent().getStringExtra("gametype");
+        
+        // Determine gameType - use helper method to make it effectively final
+        final String gameType = determineGameType();
+        
+        // Log warning if gameType is still null
+        if (gameType == null) {
+            android.util.Log.w("Results", "Warning: gameType is null, score may not be saved correctly");
+        }
         String getQuiz = getIntent().getStringExtra("quizid");
         final String getOperationText = getIntent().getStringExtra("EXTRA_OPERATIONTEXT");
         final String getDifficulty = getIntent().getStringExtra("EXTRA_DIFFICULTY");
@@ -160,17 +168,39 @@ public class Results extends AppCompatActivity {
                         Intent resultIntent = new Intent(Results.this, MultipleChoicePage.class);
                         resultIntent.putExtra("game_type", gameType);
 
-                        // For quiz game types, pass additional extras
-                        if ("Quiz".equals(gameType)) {
-                            resultIntent.putStringArrayListExtra(
-                                    "operationList", new ArrayList<>(operationList));
+                        // Check if this is a Firebase quiz and pass Firebase quiz data
+                        boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+                        if (isFirebaseQuiz) {
+                            // Pass Firebase quiz data for retry
+                            resultIntent.putExtra("isFirebaseQuiz", true);
+                            resultIntent.putExtra("firebaseQuizTitle", getIntent().getStringExtra("firebaseQuizTitle"));
+                            resultIntent.putExtra("firebaseQuizNumber", getIntent().getStringExtra("firebaseQuizNumber"));
+                            
+                            // CRITICAL: Pass Firebase questions back so retry uses the same questions
+                            java.util.ArrayList<MathProblem> firebaseQuestions = 
+                                getIntent().getParcelableArrayListExtra("firebaseQuestions");
+                            if (firebaseQuestions != null && !firebaseQuestions.isEmpty()) {
+                                resultIntent.putParcelableArrayListExtra("firebaseQuestions", firebaseQuestions);
+                                android.util.Log.d("Results", "Retrying Firebase quiz with " + firebaseQuestions.size() + " questions");
+                            } else {
+                                android.util.Log.w("Results", "⚠️ Firebase questions not found in intent for retry!");
+                            }
+                            
                             resultIntent.putExtra("quizId", getQuiz);
+                            resultIntent.putExtra("timerLimit", selTimer);
                         } else {
-                            resultIntent.putExtra("operation", getOperationText);
+                            // For CSV quiz game types, pass additional extras
+                            if ("Quiz".equals(gameType)) {
+                                resultIntent.putStringArrayListExtra(
+                                        "operationList", new ArrayList<>(operationList));
+                                resultIntent.putExtra("quizId", getQuiz);
+                            } else {
+                                resultIntent.putExtra("operation", getOperationText);
+                            }
+                            resultIntent.putExtra("difficulty", getDifficulty);
+                            resultIntent.putExtra("heartLimit", selHeart);
+                            resultIntent.putExtra("timerLimit", selTimer);
                         }
-                        resultIntent.putExtra("difficulty", getDifficulty);
-                        resultIntent.putExtra("heartLimit", selHeart);
-                        resultIntent.putExtra("timerLimit", selTimer);
                         startActivity(resultIntent);
                         finish();
                     }
@@ -203,6 +233,11 @@ public class Results extends AppCompatActivity {
         String levelType = getIntent().getStringExtra("leveltype");
         String difficulty = getIntent().getStringExtra("EXTRA_DIFFICULTY");
         String levelNext = getIntent().getStringExtra("passinglevelnext");
+        
+        // Check if this is a Firebase quiz
+        boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+        String firebaseQuizTitle = getIntent().getStringExtra("firebaseQuizTitle");
+        String firebaseQuizNumber = getIntent().getStringExtra("firebaseQuizNumber");
 
         int getScore = getIntent().getIntExtra("EXTRA_SCORE", 0);
         int getTotal = getIntent().getIntExtra("EXTRA_TOTAL", 0);
@@ -337,6 +372,38 @@ public class Results extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Determines the game type from intent extras
+     * @return The game type string or null if not found
+     */
+    private String determineGameType() {
+        String gameType = getIntent().getStringExtra("gametype");
+        // Fallback: try alternative key name
+        if (gameType == null) {
+            gameType = getIntent().getStringExtra("game_type");
+        }
+        // Final fallback: if still null, try to infer from other extras
+        if (gameType == null) {
+            // Check if this is a quiz based on quizId
+            String quizId = getIntent().getStringExtra("quizid");
+            if (quizId != null && (quizId.startsWith("quiz_") || getIntent().getBooleanExtra("isFirebaseQuiz", false))) {
+                gameType = "Quiz";
+            } else if (getIntent().getStringExtra("operation") != null) {
+                // Check if operation is passed (Practice or OnTimer)
+                String operation = getIntent().getStringExtra("operation");
+                if (operation != null) {
+                    // Could be Practice or OnTimer - default to Practice if heartLimit is set
+                    if (getIntent().hasExtra("heartLimit")) {
+                        gameType = "Practice";
+                    } else {
+                        gameType = "OnTimer";
+                    }
+                }
+            }
+        }
+        return gameType;
+    }
 
     /**
      * Sends the score result to the Firebase backend for different game types.
@@ -364,47 +431,71 @@ public class Results extends AppCompatActivity {
         String grade = sharedPreferences.getGrade(this);
         String firstName = sharedPreferences.getFirstN(this);
         String lastName = sharedPreferences.getLastN(this);
+        
+        // Check if this is a Firebase quiz
+        boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+        String firebaseQuizTitle = getIntent().getStringExtra("firebaseQuizTitle");
+        String firebaseQuizNumber = getIntent().getStringExtra("firebaseQuizNumber");
 
         // Determine quiz name & number
         int number;
+        String quizname;
 
-        if (quizid == null) {
+        if (isFirebaseQuiz && firebaseQuizTitle != null) {
+            // Firebase quiz: use the actual quiz title and number from Firebase
+            quizname = firebaseQuizTitle;
+            // Try to extract number from quizNumber string, default to 0 if not parseable
+            try {
+                number = firebaseQuizNumber != null ? Integer.parseInt(firebaseQuizNumber) : 0;
+            } catch (NumberFormatException e) {
+                number = 0;
+            }
+            quizIds = quizname; // Store for consistency
+        } else if (quizid == null) {
             quizIds = "Quiz 1";
+            quizname = "Quiz 1";
             number = 1;
         } else {
+            // CSV quiz: use switch statement for quiz IDs
             switch (quizid) {
                 case "quiz_1":
                     quizIds = "Quiz 1";
+                    quizname = "Quiz 1";
                     number = 1;
                     break;
                 case "quiz_2":
                     quizIds = "Quiz 2";
+                    quizname = "Quiz 2";
                     number = 2;
                     break;
                 case "quiz_3":
                     quizIds = "Quiz 3";
+                    quizname = "Quiz 3";
                     number = 3;
                     break;
                 case "quiz_4":
                     quizIds = "Quiz 4";
+                    quizname = "Quiz 4";
                     number = 4;
                     break;
                 case "quiz_5":
                     quizIds = "Quiz 5";
+                    quizname = "Quiz 5";
                     number = 5;
                     break;
                 case "quiz_6":
                     quizIds = "Quiz 6";
+                    quizname = "Quiz 6";
                     number = 6;
                     break;
                 default:
                     quizIds = "Quiz 1";
+                    quizname = "Quiz 1";
                     number = 1;
                     break;
             }
         }
 
-        String quizname = quizIds;
         String uuid = UUID.randomUUID().toString();
 
         // Common data map
@@ -418,6 +509,11 @@ public class Results extends AppCompatActivity {
         studentDataQuiz.put("quizno", quizname);
         studentDataQuiz.put("quizno_int", number);
         studentDataQuiz.put("quizscore", String.valueOf(Score));
+        
+        // Add Firebase quiz document ID if this is a Firebase quiz
+        if (isFirebaseQuiz && quizid != null) {
+            studentDataQuiz.put("firebaseQuizId", quizid);
+        }
 
         // Create a HashMap to store OnTimer mode data.
         HashMap<String, Object> OnTimerData = new HashMap<>();
@@ -736,13 +832,34 @@ public class Results extends AppCompatActivity {
             CollectionReference collectionRef =
                     db.collection("Accounts").document("Students").collection("MathSquare");
 
-            // Calculate attempt number by counting previous attempts for this quiz
-            collectionRef
+            // Build query based on quiz type
+            Query attemptQuery = collectionRef
                     .whereEqualTo("firstName", firstName)
                     .whereEqualTo("lastName", lastName)
-                    .whereEqualTo("gameType", "Quiz")
-                    .whereEqualTo("quizno_int", number)
-                    .get()
+                    .whereEqualTo("gameType", "Quiz");
+            
+            // For Firebase quizzes, also filter by firebaseQuizId to ensure accurate attempt counting
+            // For CSV quizzes, filter by quizno_int only
+            if (isFirebaseQuiz && quizid != null && !quizid.isEmpty()) {
+                // Firebase quiz: filter by both quizno_int AND firebaseQuizId for accurate counting
+                // This ensures each Firebase quiz is tracked separately even if they have the same quizno_int
+                attemptQuery = attemptQuery
+                        .whereEqualTo("quizno_int", number)
+                        .whereEqualTo("firebaseQuizId", quizid);
+                android.util.Log.d("ATTEMPT_TRACKING", "Querying Firebase quiz attempts: quizno_int=" + number + ", firebaseQuizId=" + quizid);
+            } else {
+                // CSV quiz: filter by quizno_int only (each CSV quiz has unique number 1-6)
+                // Also handle Firebase quizzes where quizid is missing (fallback)
+                attemptQuery = attemptQuery.whereEqualTo("quizno_int", number);
+                if (isFirebaseQuiz) {
+                    android.util.Log.w("ATTEMPT_TRACKING", "⚠️ Firebase quiz but quizid is null/empty! Using quizno_int only: " + number);
+                } else {
+                    android.util.Log.d("ATTEMPT_TRACKING", "Querying CSV quiz attempts: quizno_int=" + number);
+                }
+            }
+
+            // Calculate attempt number by counting previous attempts for this quiz
+            attemptQuery.get()
                     .addOnCompleteListener(
                             task -> {
                                 loadingDialog.dismiss();
@@ -759,6 +876,7 @@ public class Results extends AppCompatActivity {
                                 // Calculate attempt number (1st attempt, 2nd attempt, etc.)
                                 int attemptNumber = task.getResult().size() + 1;
                                 studentDataQuiz.put("attemptNumber", attemptNumber);
+                                android.util.Log.d("ATTEMPT_TRACKING", "Calculated attempt number: " + attemptNumber + " (found " + task.getResult().size() + " previous attempts)");
                                 
                                 // Always add new record to track all attempts
                                     collectionRef

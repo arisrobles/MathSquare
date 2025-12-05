@@ -8,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tracks quiz completion for sequential quiz unlocking
- * Implements defense comment #4 & #5: Quiz - Path - quizzes locked until previous ones completed
+ * Tracks quiz completion and enforces grade-based quiz access
+ * Implements grade-based restriction: Students can only access quizzes matching their grade
+ * Quiz 1 for Grade 1, Quiz 2 for Grade 2, etc.
  */
 public class QuizProgressTracker {
     
@@ -26,8 +27,8 @@ public class QuizProgressTracker {
     
     /**
      * Check if student can access a specific quiz
-     * Quiz 1 is always accessible
-     * Quiz N requires Quiz N-1 to be completed with passing score
+     * Grade-based restriction: Students can only access quizzes matching their grade
+     * Quiz 1 for Grade 1, Quiz 2 for Grade 2, etc.
      */
     public void canAccessQuiz(String quizId, QuizAccessCallback callback) {
         String firstName = sharedPreferences.getFirstN(context);
@@ -42,15 +43,39 @@ public class QuizProgressTracker {
         // Extract quiz number from quizId (e.g., "quiz_1" -> 1)
         int quizNumber = extractQuizNumber(quizId);
         
-        // Quiz 1 is always accessible
-        if (quizNumber <= 1) {
-            callback.onResult(true, "You can take this quiz!");
+        // Get student's grade number
+        int studentGradeNumber = getGradeNumber(grade);
+        
+        // Grade-based restriction: Students can only access quizzes matching their grade
+        if (quizNumber != studentGradeNumber) {
+            callback.onResult(false, 
+                String.format("This quiz is for Grade %d students. You are in Grade %d.", 
+                    quizNumber, studentGradeNumber));
             return;
         }
         
-        // Check if previous quiz is completed with passing score
-        String previousQuizId = "quiz_" + (quizNumber - 1);
-        checkPreviousQuizCompletion(firstName, lastName, grade, previousQuizId, quizNumber - 1, callback);
+        // If quiz matches student's grade, it's always accessible
+        callback.onResult(true, "You can take this quiz!");
+    }
+    
+    /**
+     * Get grade number from grade string
+     */
+    private int getGradeNumber(String grade) {
+        try {
+            // Handle both "1" and "grade_one" formats
+            if (grade.startsWith("grade_")) {
+                String numStr = grade.replace("grade_", "").replace("one", "1")
+                    .replace("two", "2").replace("three", "3")
+                    .replace("four", "4").replace("five", "5")
+                    .replace("six", "6");
+                return Integer.parseInt(numStr);
+            } else {
+                return Integer.parseInt(grade);
+            }
+        } catch (NumberFormatException e) {
+            return 1; // Default to grade 1
+        }
     }
     
     /**

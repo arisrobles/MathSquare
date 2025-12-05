@@ -69,6 +69,8 @@ FirebaseFirestore db = FirebaseFirestore.getInstance();
         TextView spinnerError = findViewById(R.id.spinnerError);
         TextInputEditText studentNumberInput = findViewById(R.id.student_number_input);
         TextView studentNumberError = findViewById(R.id.studentNumberError);
+        TextInputLayout passwordLayout = findViewById(R.id.password_layout);
+        TextInputEditText passwordInput = (TextInputEditText) passwordLayout.getEditText();
 
 TextInputEditText firstNameEditText = (TextInputEditText) firstNameLayout.getEditText();
 
@@ -217,6 +219,7 @@ sectionChooser.setOnClickListener(v -> sectionChooser.showDropDown());
             firstNameLayout.setError(null);
             lastNameLayout.setError(null);
             sectionChooser.setError(null);
+            passwordLayout.setError(null);
             spinnerError.setVisibility(View.GONE);
             studentNumberError.setVisibility(View.GONE);
 
@@ -261,6 +264,19 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                 hasError = true;
             }
 
+            // Validate Password
+            String password = passwordInput != null ? 
+                passwordInput.getText().toString() : "";
+            if (TextUtils.isEmpty(password)) {
+                passwordLayout.setError("Password is required");
+                animateShakeRotateEditTextErrorAnimation(passwordLayout);
+                hasError = true;
+            } else if (password.length() < 6) {
+                passwordLayout.setError("Password must be at least 6 characters");
+                animateShakeRotateEditTextErrorAnimation(passwordLayout);
+                hasError = true;
+            }
+
             // If no errors, proceed with validation and saving
             if (!hasError) {
                 // Use fallback values if selectedSectionName or selectedGradeLevel are null
@@ -268,8 +284,8 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                 String finalSectionName = (selectedSectionName != null) ? selectedSectionName.trim() : section.trim();
                 String finalGradeLevel = (selectedGradeLevel != null) ? selectedGradeLevel : grade;
 
-                // Validate student number exists in Firestore
-                validateStudentNumber(studentNumber, finalSectionName, finalGradeLevel, 
+                // Validate student number exists in Firestore and check if already registered
+                validateStudentNumber(studentNumber, password, finalSectionName, finalGradeLevel, 
                     firstName, lastName, section, grade, selectedSectionId, submitButton);
             } else {
                 // Don't proceed if there are validation errors
@@ -278,7 +294,7 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
         });
     }
     
-    private void validateStudentNumber(String studentNumber, String finalSectionName, 
+    private void validateStudentNumber(String studentNumber, String password, String finalSectionName, 
             String finalGradeLevel, String firstName, String lastName, String section, 
             String grade, String selectedSectionId, AppCompatButton submitButton) {
         
@@ -355,11 +371,11 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                                                 studentNumberError.setText("Student number not found. Please contact your teacher.");
                                                 studentNumberError.setVisibility(View.VISIBLE);
                                             } else {
-                                                // Student number exists, proceed with registration
-                                                Log.d("STUDENT_VALIDATION", "✅ Student number found! Proceeding with registration...");
-                                                proceedWithRegistration(finalSectionName, finalGradeLevel, 
-                                                    firstName, lastName, section, grade, selectedSectionId, 
-                                                    submitButton, trimmedStudentNumber);
+                                                // Student number exists, check if already registered
+                                                Log.d("STUDENT_VALIDATION", "✅ Student number found! Checking if already registered...");
+                                                checkIfStudentIdAlreadyRegistered(trimmedStudentNumber, password, finalSectionName, 
+                                                    finalGradeLevel, firstName, lastName, section, grade, selectedSectionId, 
+                                                    submitButton, sectionDocId);
                                             }
                                         } else {
                                             Log.e("STUDENT_VALIDATION", "❌ Error querying student numbers", validationTask.getException());
@@ -384,9 +400,10 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                                                 studentNumberError.setText("Student number not found. Please contact your teacher.");
                                                 studentNumberError.setVisibility(View.VISIBLE);
                                             } else {
-                                                proceedWithRegistration(finalSectionName, finalGradeLevel, 
-                                                    firstName, lastName, section, grade, selectedSectionId, 
-                                                    submitButton, trimmedStudentNumber);
+                                                // Student number exists, check if already registered
+                                                checkIfStudentIdAlreadyRegistered(trimmedStudentNumber, password, finalSectionName, 
+                                                    finalGradeLevel, firstName, lastName, section, grade, selectedSectionId, 
+                                                    submitButton, sectionDocId);
                                             }
                                         } else {
                                             Toast.makeText(this, "Error validating student number: " + 
@@ -409,9 +426,48 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
             });
     }
     
+    /**
+     * Check if student ID is already registered
+     */
+    private void checkIfStudentIdAlreadyRegistered(String studentNumber, String password, 
+            String finalSectionName, String finalGradeLevel, String firstName, String lastName, 
+            String section, String grade, String selectedSectionId, AppCompatButton submitButton, 
+            String sectionDocId) {
+        
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        
+        // Check if student number is already registered in Accounts/Students/MathSquare
+        db.collection("Accounts")
+            .document("Students")
+            .collection("MathSquare")
+            .whereEqualTo("studentNumber", studentNumber)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    if (!task.getResult().isEmpty()) {
+                        // Student ID is already registered
+                        Log.w("STUDENT_REGISTRATION", "❌ Student ID already registered: " + studentNumber);
+                        TextView studentNumberError = findViewById(R.id.studentNumberError);
+                        studentNumberError.setText("This student ID is already registered. Please sign in instead.");
+                        studentNumberError.setVisibility(View.VISIBLE);
+                    } else {
+                        // Student ID is not registered, proceed with registration
+                        Log.d("STUDENT_REGISTRATION", "✅ Student ID not registered, proceeding with registration...");
+                        proceedWithRegistration(finalSectionName, finalGradeLevel, 
+                            firstName, lastName, section, grade, selectedSectionId, 
+                            submitButton, studentNumber, password, sectionDocId);
+                    }
+                } else {
+                    Log.e("STUDENT_REGISTRATION", "❌ Error checking if student ID is registered", task.getException());
+                    Toast.makeText(this, "Error checking student ID. Please try again.", Toast.LENGTH_LONG).show();
+                }
+            });
+    }
+    
     private void proceedWithRegistration(String finalSectionName, String finalGradeLevel,
             String firstName, String lastName, String section, String grade, 
-            String selectedSectionId, AppCompatButton submitButton, String studentNumber) {
+            String selectedSectionId, AppCompatButton submitButton, String studentNumber, 
+            String password, String sectionDocId) {
         
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -423,6 +479,7 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                 studentData.put("section", finalSectionName);
                 studentData.put("grade", finalGradeLevel);
         studentData.put("studentNumber", studentNumber);
+        studentData.put("password", password); // Save password (in production, should be hashed)
                 studentData.put("quizno", "N/A");
                 studentData.put("timestamp", FieldValue.serverTimestamp());
                 studentData.put("quizscore", "0");
@@ -432,6 +489,10 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                         .set(studentData)
                         .addOnSuccessListener(documentReference -> {
                             Log.d("STUDENT_SIGNUP", "Student saved successfully with UUID: " + uuid);
+                            
+                            // Mark student number as registered in Sections collection
+                            markStudentNumberAsRegistered(studentNumber, sectionDocId);
+                            
                             if (selectedSectionId != null) {
                                 saveStudentToSection(firstName, lastName, selectedSectionId);
                             }
@@ -444,6 +505,7 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
                             sharedPreferences.saveGrade(studentSignUp.this, grade);
                             sharedPreferences.saveFirstN(studentSignUp.this, firstName);
                             sharedPreferences.saveLastN(studentSignUp.this, lastName);
+                            sharedPreferences.saveStudentNumber(studentSignUp.this, studentNumber); // Save student number to SharedPreferences
 
                             Intent intent = new Intent(this, MainActivity.class);
                             startActivity(intent);
@@ -460,6 +522,43 @@ if (TextUtils.isEmpty(grade) || !grade.matches("[1-6]")) {
         });
     }
 
+    /**
+     * Mark student number as registered in the section's StudentNumbers collection
+     */
+    private void markStudentNumberAsRegistered(String studentNumber, String sectionDocId) {
+        if (sectionDocId == null || studentNumber == null) {
+            Log.w("STUDENT_REGISTRATION", "Cannot mark student number as registered: sectionDocId or studentNumber is null");
+            return;
+        }
+        
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        
+        // Find the student number document and mark it as registered
+        db.collection("Sections")
+            .document(sectionDocId)
+            .collection("StudentNumbers")
+            .whereEqualTo("studentNumber", studentNumber.trim())
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                    // Update the first matching document to mark it as registered
+                    String docId = task.getResult().getDocuments().get(0).getId();
+                    db.collection("Sections")
+                        .document(sectionDocId)
+                        .collection("StudentNumbers")
+                        .document(docId)
+                        .update("isRegistered", true, "registeredAt", FieldValue.serverTimestamp())
+                        .addOnSuccessListener(aVoid -> {
+                            Log.d("STUDENT_REGISTRATION", "✅ Student number marked as registered: " + studentNumber);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e("STUDENT_REGISTRATION", "❌ Failed to mark student number as registered", e);
+                        });
+                } else {
+                    Log.w("STUDENT_REGISTRATION", "⚠️ Student number document not found to mark as registered");
+                }
+            });
+    }
 
     private void saveStudentToSection(String firstName, String lastName, String sectionDocId) {
 

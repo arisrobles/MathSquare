@@ -20,6 +20,7 @@ public class sharedPreferences {
     private static final String KEY_STUDENT_LOGIN = "202";
     private static final String KEY_SECTION = "section";
     private static final String KEY_GRADE = "grade";
+    private static final String KEY_STUDENT_NUMBER = "student_number";
     
     private static final String KEY_USER_AGREE = "status_useragreed";
     private static final String KEY_IS_SUBSCRIBED = "billing_check";
@@ -350,6 +351,23 @@ public class sharedPreferences {
     public static void notifySubscriptionTime(Context context, long time) {
         SharedPreferences.Editor editor = getSharedPreferences(context).edit();
         editor.putLong(KEY_GUEST_STATUS, time);
+        editor.apply();
+    }
+    
+    // Student Number methods
+    public static void saveStudentNumber(Context context, String studentNumber) {
+        SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.putString(KEY_STUDENT_NUMBER, studentNumber);
+        editor.apply();
+    }
+
+    public static String getStudentNumber(Context context) {
+        return getSharedPreferences(context).getString(KEY_STUDENT_NUMBER, null);
+    }
+    
+    public static void clearStudentNumber(Context context) {
+        SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.remove(KEY_STUDENT_NUMBER);
         editor.apply();
     }
 }

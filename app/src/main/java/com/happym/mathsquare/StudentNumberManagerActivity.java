@@ -248,16 +248,73 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
             return;
         }
         
+        // Check if already in the current list
         if (studentNumbers.contains(studentNumber)) {
-            Toast.makeText(this, "Student number already added", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Student number already added to this list", Toast.LENGTH_SHORT).show();
             studentNumberInput.requestFocus();
             return;
         }
         
-        studentNumbers.add(studentNumber);
-        studentNumberInput.setText("");
-        updateStudentNumbersList();
-        Toast.makeText(this, "Student number added: " + studentNumber, Toast.LENGTH_SHORT).show();
+        // Check if student number already exists in any section (global uniqueness check)
+        checkStudentNumberUniqueness(studentNumber);
+    }
+    
+    /**
+     * Checks if a student number is unique across all sections in the system
+     */
+    private void checkStudentNumberUniqueness(String studentNumber) {
+        // Disable add button while checking
+        addButton.setEnabled(false);
+        addButton.setText("Checking...");
+        
+        // Query all sections to check if student number exists anywhere
+        db.collectionGroup("StudentNumbers")
+            .whereEqualTo("studentNumber", studentNumber)
+            .get()
+            .addOnCompleteListener(task -> {
+                addButton.setEnabled(true);
+                addButton.setText("Add");
+                
+                if (task.isSuccessful()) {
+                    int existingCount = task.getResult().size();
+                    
+                    if (existingCount > 0) {
+                        // Student number already exists in another section
+                        String existingSection = "";
+                        String existingGrade = "";
+                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                            existingSection = doc.getString("section");
+                            existingGrade = doc.getString("grade");
+                            break; // Get first match for display
+                        }
+                        
+                        String errorMsg = "Student number '" + studentNumber + "' already exists";
+                        if (existingSection != null && existingGrade != null) {
+                            errorMsg += " in Grade " + existingGrade + " - " + existingSection;
+                        }
+                        errorMsg += ". Student numbers must be unique across all sections.";
+                        
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+                        Log.w("StudentNumberManager", "❌ Duplicate student number detected: " + studentNumber);
+                        studentNumberInput.requestFocus();
+                        return;
+                    }
+                    
+                    // Student number is unique, add it to the list
+                    studentNumbers.add(studentNumber);
+                    studentNumberInput.setText("");
+                    updateStudentNumbersList();
+                    Toast.makeText(this, "Student number added: " + studentNumber, Toast.LENGTH_SHORT).show();
+                    Log.d("StudentNumberManager", "✅ Student number is unique: " + studentNumber);
+                } else {
+                    // Error checking uniqueness, but allow adding (fail open for better UX)
+                    Log.e("StudentNumberManager", "Error checking student number uniqueness", task.getException());
+                    Toast.makeText(this, "Warning: Could not verify uniqueness. Adding anyway.", Toast.LENGTH_SHORT).show();
+                    studentNumbers.add(studentNumber);
+                    studentNumberInput.setText("");
+                    updateStudentNumbersList();
+                }
+            });
     }
     
     private void updateStudentNumbersList() {
@@ -491,6 +548,96 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
         
         Log.d("StudentNumberManager", "Adding " + totalNumbers + " new student numbers to section: " + currentSectionId);
         Log.d("StudentNumberManager", "Student numbers to save: " + studentNumbers.toString());
+        
+        // Final uniqueness check before saving (double-check in case numbers were added before validation)
+        verifyAllNumbersUniqueBeforeSave();
+    }
+    
+    /**
+     * Verifies all student numbers are unique before saving
+     */
+    private void verifyAllNumbersUniqueBeforeSave() {
+        // Check for duplicates within the list itself
+        List<String> duplicates = new ArrayList<>();
+        for (int i = 0; i < studentNumbers.size(); i++) {
+            String number = studentNumbers.get(i);
+            for (int j = i + 1; j < studentNumbers.size(); j++) {
+                if (number.equals(studentNumbers.get(j)) && !duplicates.contains(number)) {
+                    duplicates.add(number);
+                }
+            }
+        }
+        
+        if (!duplicates.isEmpty()) {
+            Toast.makeText(this, "Error: Duplicate student numbers found in list: " + duplicates.toString(), Toast.LENGTH_LONG).show();
+            saveButton.setEnabled(true);
+            saveButton.setText("💾 Save Student Numbers");
+            return;
+        }
+        
+        // Check each number against existing numbers in all sections
+        checkNumbersAgainstDatabase(0);
+    }
+    
+    /**
+     * Recursively checks each student number against the database
+     */
+    private void checkNumbersAgainstDatabase(int index) {
+        if (index >= studentNumbers.size()) {
+            // All numbers checked, proceed with saving
+            saveNumbersToDatabase();
+            return;
+        }
+        
+        String number = studentNumbers.get(index);
+        
+        // Check if this number exists in any section (excluding current section's existing numbers)
+        db.collectionGroup("StudentNumbers")
+            .whereEqualTo("studentNumber", number)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    // Filter out documents from current section (we're replacing those)
+                    int externalCount = 0;
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        // Get the section ID from the document path
+                        String docPath = doc.getReference().getPath();
+                        // Path format: Sections/{sectionId}/StudentNumbers/{docId}
+                        String[] pathParts = docPath.split("/");
+                        if (pathParts.length >= 2) {
+                            String docSectionId = pathParts[1];
+                            // Only count if it's from a different section
+                            if (!docSectionId.equals(currentSectionId)) {
+                                externalCount++;
+                            }
+                        }
+                    }
+                    
+                    if (externalCount > 0) {
+                        // Found duplicate in another section
+                        String errorMsg = "Cannot save: Student number '" + number + "' already exists in another section. Please remove it from the list.";
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+                        Log.e("StudentNumberManager", "❌ Duplicate found before save: " + number);
+                        saveButton.setEnabled(true);
+                        saveButton.setText("💾 Save Student Numbers");
+                        return;
+                    }
+                    
+                    // This number is unique, check next one
+                    checkNumbersAgainstDatabase(index + 1);
+                } else {
+                    // Error checking, but proceed (fail open)
+                    Log.e("StudentNumberManager", "Error checking number " + number, task.getException());
+                    checkNumbersAgainstDatabase(index + 1);
+                }
+            });
+    }
+    
+    /**
+     * Saves all student numbers to the database after uniqueness verification
+     */
+    private void saveNumbersToDatabase() {
+        int totalNumbers = studentNumbers.size();
         
         // Use batch write for better reliability
         com.google.firebase.firestore.WriteBatch batch = db.batch();

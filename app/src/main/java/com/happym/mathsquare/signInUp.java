@@ -164,7 +164,7 @@ public class signInUp extends AppCompatActivity {
             btnEnterStudent.setOnClickListener(view -> {
                     playSound("click.mp3");
     animateButtonPushDowm(btnEnterStudent);  
-    Intent intent = new Intent(signInUp.this, studentSignUp.class);
+    Intent intent = new Intent(signInUp.this, studentLogIn.class);
     startActivity(intent);
                     
                 stopButtonFocusAnimation(btnEnterStudent);

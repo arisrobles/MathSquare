@@ -29,6 +29,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +56,7 @@ public class teacherSignUp extends AppCompatActivity {
 
     // Firestore instance as class field
     private FirebaseFirestore db;
+    private Spinner gradeSpinner, sectionSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +74,13 @@ public class teacherSignUp extends AppCompatActivity {
         TextInputLayout firstNameLayout = findViewById(R.id.first_name_layout);
         TextInputLayout passwordLayout = findViewById(R.id.password);
         TextInputLayout passwordRepeatLayout = findViewById(R.id.password_repeat);
+        gradeSpinner = findViewById(R.id.spinnerGrade);
+        sectionSpinner = findViewById(R.id.spinnerSection);
 
         AppCompatButton submitButton = findViewById(R.id.btn_submit);
+        
+        // Setup grade spinner
+        setupGradeSpinner();
 
        TextInputEditText emailEditText = (TextInputEditText) emailLayout.getEditText();
 TextInputEditText firstNameEditText = (TextInputEditText) firstNameLayout.getEditText();
@@ -137,14 +145,88 @@ if (passwordEditText != null) {
             }
 
             if (!hasError) {
+                // Get selected grade and section (optional)
+                String selectedGrade = null;
+                String selectedSection = null;
+                
+                int gradePosition = gradeSpinner.getSelectedItemPosition();
+                int sectionPosition = sectionSpinner.getSelectedItemPosition();
+                
+                if (gradePosition > 0) {
+                    selectedGrade = (String) gradeSpinner.getSelectedItem();
+                }
+                
+                if (sectionPosition > 0 && sectionSpinner.getAdapter().getCount() > 0) {
+                    selectedSection = (String) sectionSpinner.getSelectedItem();
+                }
+                
                 // Check if email already exists before creating account
-                checkEmailExists(email, firstName, password, submitButton);
+                checkEmailExists(email, firstName, password, submitButton, selectedGrade, selectedSection);
             }
         });
     }
+    
+    /**
+     * Setup grade spinner with options
+     */
+    private void setupGradeSpinner() {
+        List<String> grades = Arrays.asList("Select Grade (Optional)", "1", "2", "3", "4", "5", "6");
+        ArrayAdapter<String> gradeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, grades);
+        gradeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        gradeSpinner.setAdapter(gradeAdapter);
+        
+        // Load sections when grade is selected
+        gradeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) {
+                    String selectedGrade = grades.get(position);
+                    loadSectionsForGrade(selectedGrade);
+                } else {
+                    sectionSpinner.setAdapter(new ArrayAdapter<>(teacherSignUp.this, android.R.layout.simple_spinner_item, new ArrayList<>()));
+                }
+            }
+            
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+    
+    /**
+     * Load sections for a specific grade
+     */
+    private void loadSectionsForGrade(String grade) {
+        int gradeNumber;
+        try {
+            gradeNumber = Integer.parseInt(grade);
+        } catch (NumberFormatException e) {
+            return;
+        }
+        
+        db.collection("Sections")
+            .whereEqualTo("Grade_Number", gradeNumber)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    List<String> sections = new ArrayList<>();
+                    sections.add("Select Section (Optional)");
+                    
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        String section = doc.getString("Section");
+                        if (section != null) {
+                            sections.add(section);
+                        }
+                    }
+                    
+                    ArrayAdapter<String> sectionAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sections);
+                    sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    sectionSpinner.setAdapter(sectionAdapter);
+                }
+            });
+    }
 
     // Check if email already exists in any teacher collection
-    private void checkEmailExists(String email, String firstName, String password, AppCompatButton submitButton) {
+    private void checkEmailExists(String email, String firstName, String password, AppCompatButton submitButton, String selectedGrade, String selectedSection) {
         Log.d("EMAIL_VALIDATION", "Checking if email exists: " + email);
 
         // First check: TeacherProfiles collection
@@ -182,27 +264,27 @@ if (passwordEditText != null) {
                                         } else {
                                             // Email not found anywhere, proceed with account creation
                                             Log.d("EMAIL_VALIDATION", "Email not found, proceeding with account creation: " + email);
-                                            createTeacherAccount(email, firstName, password, submitButton);
+                                            createTeacherAccount(email, firstName, password, submitButton, selectedGrade, selectedSection);
                                         }
                                     })
                                     .addOnFailureListener(e -> {
                                         Log.e("EMAIL_VALIDATION", "Error checking original structure: " + e.getMessage());
                                         // On error, proceed with creation (fail-safe)
-                                        createTeacherAccount(email, firstName, password, submitButton);
+                                        createTeacherAccount(email, firstName, password, submitButton, selectedGrade, selectedSection);
                                     });
                             }
                         })
                         .addOnFailureListener(e -> {
                             Log.e("EMAIL_VALIDATION", "Error checking TeacherEmailList: " + e.getMessage());
                             // On error, proceed with creation (fail-safe)
-                            createTeacherAccount(email, firstName, password, submitButton);
+                            createTeacherAccount(email, firstName, password, submitButton, selectedGrade, selectedSection);
                         });
                 }
             })
             .addOnFailureListener(e -> {
                 Log.e("EMAIL_VALIDATION", "Error checking TeacherProfiles: " + e.getMessage());
                 // On error, proceed with creation (fail-safe)
-                createTeacherAccount(email, firstName, password, submitButton);
+                createTeacherAccount(email, firstName, password, submitButton, selectedGrade, selectedSection);
             });
     }
 
@@ -215,7 +297,7 @@ if (passwordEditText != null) {
     }
 
     // Create teacher account after email validation passes
-    private void createTeacherAccount(String email, String firstName, String password, AppCompatButton submitButton) {
+    private void createTeacherAccount(String email, String firstName, String password, AppCompatButton submitButton, String selectedGrade, String selectedSection) {
         // Generate a unique document ID
         String teacherId = UUID.randomUUID().toString();
 
@@ -224,6 +306,15 @@ if (passwordEditText != null) {
         teacherData.put("firstName", firstName);
         teacherData.put("email", email);
         teacherData.put("password", password); // In a real app, password should be hashed
+        
+        // Add assigned grade and section if provided
+        if (selectedGrade != null && !selectedGrade.isEmpty()) {
+            teacherData.put("assignedGrade", selectedGrade);
+        }
+        if (selectedSection != null && !selectedSection.isEmpty()) {
+            teacherData.put("assignedSection", selectedSection);
+        }
+        
         animateButtonClick(submitButton);
 
         Log.d("TEACHER_CREATION", "Creating teacher account for: " + email);

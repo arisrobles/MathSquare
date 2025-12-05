@@ -149,75 +149,6 @@
 
         </LinearLayout>
 
-        <!-- Sections Management Section -->
-        <LinearLayout
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:orientation="vertical"
-             android:layout_marginTop="20dp"
-             android:layout_marginHorizontal="20dp">
-
-            <TextView
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:gravity="start"
-                 android:shadowRadius="4"
-                 android:textSize="22sp"
-                 android:fontFamily="@font/paytone_one"
-                 android:textColor="@color/white"
-                 android:shadowColor="#000000"
-                 android:shadowDx="2"
-                 android:shadowDy="2"
-                 android:text="Manage Sections"
-                 android:textStyle="bold"
-                 android:layout_marginBottom="12dp" />
-
-            <RelativeLayout
-                 android:layout_height="60dp"
-                 android:layout_width="match_parent"
-                 android:background="@drawable/box_create"
-                 android:elevation="8dp"
-                 android:id="@+id/sections_panel">
-
-                <LinearLayout
-                     android:layout_height="match_parent"
-                     android:layout_width="match_parent"
-                     android:gravity="center"
-                     android:orientation="horizontal"
-                     android:paddingHorizontal="16dp">
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:layout_weight="1"
-                         android:gravity="start|center_vertical"
-                         android:shadowRadius="4"
-                         android:textSize="18sp"
-                         android:fontFamily="@font/paytone_one"
-                         android:textColor="@color/white"
-                         android:shadowColor="#000000"
-                         android:shadowDx="2"
-                         android:shadowDy="2"
-                         android:text="View &amp; Manage Sections" />
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="wrap_content"
-                         android:gravity="center_vertical"
-                         android:textSize="24sp"
-                         android:fontFamily="@font/paytone_one"
-                         android:textColor="@color/white"
-                         android:shadowColor="#000000"
-                         android:shadowDx="2"
-                         android:shadowDy="2"
-                         android:text=">" />
-
-                </LinearLayout>
-
-            </RelativeLayout>
-
-        </LinearLayout>
-
         <!-- Students Management Section -->
         <LinearLayout
              android:layout_height="wrap_content"
@@ -348,6 +279,8 @@
         app:menu="@menu/teacher_menu"
         app:itemIconTint="@color/colorAccent"
         app:itemTextColor="@color/colorAccent"
+        app:itemIconSize="36dp"
+        app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

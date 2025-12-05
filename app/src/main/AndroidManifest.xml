@@ -31,6 +31,9 @@
             android:name=".studentSignUp"
             android:exported="true" />
         <activity
+            android:name=".studentLogIn"
+            android:exported="true" />
+        <activity
             android:name=".Dashboard"
             android:exported="true" />
         <activity
@@ -113,6 +116,15 @@
             android:exported="false" />
         <activity
             android:name=".QuizViewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StudentProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TeacherProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminProfileActivity"
             android:exported="false" />
 
         <meta-data

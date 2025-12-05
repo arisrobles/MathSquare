@@ -64,6 +64,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -84,9 +88,13 @@ public class QuizzesSection extends AppCompatActivity {
     private FirebaseFirestore db;
     private MediaPlayer soundEffectPlayer;
     private String quizType = "quiz";
+    private String firstCreatedQuizId = null; // Store the ID of the first created Firebase quiz
     private FrameLayout numberContainer, backgroundFrame;
     private final Random random = new Random();
     private NumBGAnimation numBGAnimation;
+    private QuizTileAdapter quizTileAdapter;
+    private TextView emptyStateText;
+    private RecyclerView quizzesRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,11 +105,20 @@ public class QuizzesSection extends AppCompatActivity {
 
         FirebaseApp.initializeApp(this);
 
-        // Get UI elements
-        TextView quizLevelText = findViewById(R.id.quiz_level_text);
-        TextView gradeLevelText = findViewById(R.id.grade_level_text);
-        AppCompatButton startQuizButton = findViewById(R.id.btn_start_quiz);
-        LinearLayout quizLevelDisplay = findViewById(R.id.quiz_level_display);
+        // Get UI elements - RecyclerView for grid layout
+        quizzesRecyclerView = findViewById(R.id.quizzes_recycler_view);
+        emptyStateText = findViewById(R.id.emptyStateText);
+        
+        // Set up GridLayoutManager with 3 columns
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 3);
+        quizzesRecyclerView.setLayoutManager(layoutManager);
+        
+        // Create adapter for quiz tiles
+        quizTileAdapter = new QuizTileAdapter();
+        quizzesRecyclerView.setAdapter(quizTileAdapter);
+        
+        // Initially show empty state (will be hidden when quizzes are loaded)
+        updateEmptyState();
 
         // Firestore instance
         db = FirebaseFirestore.getInstance();
@@ -157,9 +174,12 @@ public class QuizzesSection extends AppCompatActivity {
         // Get student's section
         String studentSection = sharedPreferences.getSection(this);
         
-        // First, check for Firebase quizzes for this grade and section
-        loadFirebaseQuizzes(studentGrade, studentSection, quizLevelText, gradeLevelText, 
-            startQuizButton, quizLevelDisplay, quizId, difficulty);
+        // ALWAYS add default CSV quiz as a tile first (independent, works alone)
+        addCSVQuizTile(quizId, difficulty);
+        
+        // SEPARATELY check for Firebase custom quizzes (independent fetching logic)
+        // Each Firebase quiz will be added as a separate tile using the same layout/design/flow
+        loadFirebaseQuizzes(studentGrade, studentSection);
 
         backgroundFrame = findViewById(R.id.main);
         numberContainer = findViewById(R.id.number_container); // Get FrameLayout from XML
@@ -206,13 +226,27 @@ public class QuizzesSection extends AppCompatActivity {
         String grade = sharedPreferences.getGrade(this);
         Log.d("QuizAccess", "  - Student: " + firstName + " " + lastName + ", Grade: " + grade);
         
-        // Fetch Firestore status first to check if quiz is available
-        fetchQuizStatus(quizId, startButton);
+        // For default CSV quizzes (quiz_1, quiz_2, etc.), skip Firebase status check
+        // They should only be controlled by sequential locking
+        // Only check Firebase status for custom teacher quizzes (which have Firebase document IDs)
+        boolean isDefaultCSVQuiz = quizId != null && quizId.startsWith("quiz_") && quizId.matches("quiz_\\d+");
+        
+        if (!isDefaultCSVQuiz) {
+            // This is a Firebase quiz, check its status
+            fetchQuizStatus(quizId, startButton);
+        } else {
+            // Default CSV quiz - set button to enabled state initially
+            startButton.setBackgroundResource(R.drawable.btn_playgame);
+            startButton.setText("START QUIZ");
+            startButton.setClickable(true);
+            startButton.setEnabled(true);
+            startButton.setAlpha(1.0f);
+        }
 
-        // Check sequential quiz locking (Quiz 2 locked until Quiz 1 completed, etc.)
+        // Check grade-based quiz access (students can only access quizzes matching their grade)
         QuizProgressTracker quizTracker = new QuizProgressTracker(this);
         quizTracker.canAccessQuiz(quizId, (canAccess, message) -> {
-            Log.d("QuizAccess", "  - Sequential check result: " + (canAccess ? "✅ Accessible" : "❌ Locked"));
+            Log.d("QuizAccess", "  - Grade-based check result: " + (canAccess ? "✅ Accessible" : "❌ Locked"));
             Log.d("QuizAccess", "  - Message: " + message);
             
             if (!canAccess) {
@@ -230,6 +264,14 @@ public class QuizzesSection extends AppCompatActivity {
             } else {
                 // Quiz is accessible, set up normal click listener
                 Log.d("QuizAccess", "✅ Quiz is accessible, setting up click listener");
+                // For default CSV quizzes, ensure button is enabled
+                if (isDefaultCSVQuiz) {
+                    startButton.setBackgroundResource(R.drawable.btn_playgame);
+                    startButton.setText("START QUIZ");
+                    startButton.setClickable(true);
+                    startButton.setEnabled(true);
+                    startButton.setAlpha(1.0f);
+                }
                 setupQuizClickListener(startButton, quizId, difficulty);
             }
         });
@@ -270,12 +312,12 @@ public class QuizzesSection extends AppCompatActivity {
                                 }
                             }
                             
-                            // Also check sequential quiz locking (double-check)
+                            // Also check grade-based quiz access (double-check)
                             QuizProgressTracker quizTracker = new QuizProgressTracker(view.getContext());
                             quizTracker.canAccessQuiz(quizId, (canAccess, accessMessage) -> {
-                                Log.d("QuizAccess", "  - Final sequential check: " + (canAccess ? "✅ Accessible" : "❌ Locked"));
+                                Log.d("QuizAccess", "  - Final grade-based check: " + (canAccess ? "✅ Accessible" : "❌ Locked"));
                                 if (!canAccess) {
-                                    Log.w("QuizAccess", "⚠️ Quiz blocked by sequential check: " + accessMessage);
+                                    Log.w("QuizAccess", "⚠️ Quiz blocked by grade restriction: " + accessMessage);
                                     Toast.makeText(view.getContext(), accessMessage, Toast.LENGTH_LONG).show();
                                     return;
                                 }
@@ -390,25 +432,25 @@ public class QuizzesSection extends AppCompatActivity {
     }
     
     /**
-     * Load Firebase quizzes for student's grade and section
-     * If no Firebase quizzes found, fall back to CSV quiz
+     * Load Firebase custom quizzes for student's grade and section
+     * SEPARATE fetching logic from CSV quizzes
+     * Each quiz will be added as a tile using the same layout/design/flow
      */
-    private void loadFirebaseQuizzes(String studentGrade, String studentSection,
-                                    TextView quizLevelText, TextView gradeLevelText,
-                                    AppCompatButton startQuizButton, LinearLayout quizLevelDisplay,
-                                    String defaultQuizId, String defaultDifficulty) {
+    private void loadFirebaseQuizzes(String studentGrade, String studentSection) {
         
         if (studentGrade == null) {
-            // Fall back to default CSV quiz
-            setupDefaultQuiz(quizLevelText, gradeLevelText, startQuizButton, quizLevelDisplay, 
-                defaultQuizId, defaultDifficulty);
+            // No student grade, skip Firebase quiz loading (CSV quiz already added)
+            Log.d("QuizzesSection", "No student grade, skipping Firebase quiz loading");
             return;
         }
         
         // Query Firebase for active quizzes matching grade
         // Note: Firestore doesn't support OR queries easily, so we'll query and filter client-side
-        com.google.firebase.firestore.Query query = db.collection("TeacherQuizzes")
-            .whereEqualTo("grade", studentGrade);
+        Log.d("QuizzesSection", "Loading Firebase quizzes for Grade: " + studentGrade + ", Section: " + studentSection);
+        
+        // Query all quizzes (we'll filter by grade and section client-side for better control)
+        // This ensures we don't miss quizzes due to format mismatches
+        com.google.firebase.firestore.Query query = db.collection("TeacherQuizzes");
         
         query.get()
             .addOnCompleteListener(task -> {
@@ -416,26 +458,65 @@ public class QuizzesSection extends AppCompatActivity {
                     java.util.List<com.google.firebase.firestore.QueryDocumentSnapshot> activeQuizzes = new java.util.ArrayList<>();
                     java.util.Date now = new java.util.Date();
                     
-                    // Filter by schedule and section (active quizzes only)
+                    int totalQuizzes = task.getResult().size();
+                    Log.d("QuizzesSection", "Found " + totalQuizzes + " total quiz(es) in Firebase");
+                    
+                    // Filter by grade, section, and schedule
                     for (com.google.firebase.firestore.QueryDocumentSnapshot doc : task.getResult()) {
-                        // Check section match
+                        String quizTitle = doc.getString("quizTitle");
+                        String quizGrade = doc.getString("grade");
                         String quizSection = doc.getString("section");
+                        
+                        Log.d("QuizzesSection", "Checking quiz: " + quizTitle + " (Grade: " + quizGrade + ", Section: " + quizSection + ")");
+                        
+                        // Check grade match (handle potential format differences)
+                        boolean gradeMatches = false;
+                        if (quizGrade != null && studentGrade != null) {
+                            // Normalize both to string and compare
+                            String normalizedQuizGrade = quizGrade.trim();
+                            String normalizedStudentGrade = studentGrade.trim();
+                            gradeMatches = normalizedQuizGrade.equals(normalizedStudentGrade);
+                            
+                            // Also try numeric comparison if both are numeric
+                            if (!gradeMatches) {
+                                try {
+                                    int quizGradeNum = Integer.parseInt(normalizedQuizGrade);
+                                    int studentGradeNum = Integer.parseInt(normalizedStudentGrade);
+                                    gradeMatches = (quizGradeNum == studentGradeNum);
+                                } catch (NumberFormatException e) {
+                                    // Not numeric, skip
+                                }
+                            }
+                        }
+                        
+                        if (!gradeMatches) {
+                            Log.d("QuizzesSection", "  ❌ Quiz skipped: Grade mismatch (Quiz: " + quizGrade + ", Student: " + studentGrade + ")");
+                            continue; // Skip this quiz
+                        }
+                        
+                        Log.d("QuizzesSection", "  ✅ Grade matches!");
+                        
+                        // Check section match
                         boolean sectionMatches = false;
                         
                         if (studentSection != null && !studentSection.trim().isEmpty()) {
                             // Student has section - match if quiz is for their section or "All Sections"
                             sectionMatches = studentSection.equals(quizSection) || 
                                            "All Sections".equals(quizSection);
+                            Log.d("QuizzesSection", "  Section match: " + sectionMatches + " (Student: " + studentSection + ", Quiz: " + quizSection + ")");
                         } else {
                             // Student has no section - only show "All Sections" quizzes
                             sectionMatches = "All Sections".equals(quizSection);
+                            Log.d("QuizzesSection", "  Section match (no student section): " + sectionMatches + " (Quiz: " + quizSection + ")");
                         }
                         
                         if (!sectionMatches) {
+                            Log.d("QuizzesSection", "  ❌ Quiz skipped: Section mismatch");
                             continue; // Skip this quiz
                         }
                         
-                        // Check schedule
+                        // Check schedule - show all quizzes regardless of schedule for now
+                        // (Teachers can control access via schedule, but we'll show them all)
                         com.google.firebase.Timestamp startTimestamp = doc.getTimestamp("startDateTime");
                         com.google.firebase.Timestamp endTimestamp = doc.getTimestamp("endDateTime");
                         
@@ -443,92 +524,344 @@ public class QuizzesSection extends AppCompatActivity {
                             java.util.Date startDate = startTimestamp.toDate();
                             java.util.Date endDate = endTimestamp.toDate();
                             
-                            // Check if quiz is currently active
-                            if (now.after(startDate) && now.before(endDate)) {
-                                activeQuizzes.add(doc);
-                            }
+                            Log.d("QuizzesSection", "  Schedule: " + startDate + " to " + endDate);
+                            Log.d("QuizzesSection", "  Current time: " + now);
+                            
+                            // Check if quiz is currently active (between start and end dates) or scheduled for future
+                            boolean isActive = now.after(startDate) && now.before(endDate);
+                            boolean isFuture = now.before(startDate);
+                            boolean isPast = now.after(endDate);
+                            
+                            Log.d("QuizzesSection", "  Active: " + isActive + ", Future: " + isFuture + ", Past: " + isPast);
+                            
+                            // Show ALL quizzes (active, future, and past) - let the button handle enabling/disabling
+                            // This ensures students can see all quizzes created for them
+                            Log.d("QuizzesSection", "  ✅ Quiz found, adding to list (schedule will be checked when starting)");
+                            activeQuizzes.add(doc);
+                        } else {
+                            // If no schedule, show the quiz anyway (for backwards compatibility or unscheduled quizzes)
+                            Log.d("QuizzesSection", "  ⚠️ Quiz has no schedule, showing anyway");
+                            activeQuizzes.add(doc);
                         }
                     }
                     
+                    Log.d("QuizzesSection", "Total active quizzes after filtering: " + activeQuizzes.size());
+                    
                     if (!activeQuizzes.isEmpty()) {
-                        // Display Firebase quizzes
-                        displayFirebaseQuizzes(activeQuizzes, quizLevelText, gradeLevelText, 
-                            startQuizButton, quizLevelDisplay);
+                        // Sort quizzes by creation time (oldest first) to identify the first created quiz
+                        activeQuizzes.sort((doc1, doc2) -> {
+                            com.google.firebase.Timestamp createdAt1 = doc1.getTimestamp("createdAt");
+                            com.google.firebase.Timestamp createdAt2 = doc2.getTimestamp("createdAt");
+                            
+                            // Handle null timestamps (shouldn't happen, but defensive)
+                            if (createdAt1 == null && createdAt2 == null) return 0;
+                            if (createdAt1 == null) return 1; // null goes to end
+                            if (createdAt2 == null) return -1; // null goes to end
+                            
+                            // Compare timestamps (older = smaller = first)
+                            return createdAt1.compareTo(createdAt2);
+                        });
+                        
+                        // Store the first created quiz's ID (oldest = first in sorted list)
+                        firstCreatedQuizId = activeQuizzes.get(0).getId();
+                        Log.d("QuizzesSection", "📌 First created quiz ID: " + firstCreatedQuizId + " (Title: " + activeQuizzes.get(0).getString("quizTitle") + ")");
+                        
+                        // Add each Firebase quiz as a separate tile (CSV quiz already added)
+                        Log.d("QuizzesSection", "Adding " + activeQuizzes.size() + " Firebase quiz(es) as tiles");
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot quizDoc : activeQuizzes) {
+                            addFirebaseQuizTile(quizDoc);
+                        }
                     } else {
-                        // No active Firebase quizzes, fall back to CSV quiz
-                        setupDefaultQuiz(quizLevelText, gradeLevelText, startQuizButton, 
-                            quizLevelDisplay, defaultQuizId, defaultDifficulty);
+                        // No active Firebase quizzes - CSV quiz tile already displayed
+                        Log.d("QuizzesSection", "No active Firebase quizzes found - only CSV quiz tile displayed");
+                        firstCreatedQuizId = null; // Reset if no quizzes
                     }
+                    
+                    // Update empty state after loading all quizzes
+                    updateEmptyState();
                 } else {
-                    // Error loading Firebase quizzes, fall back to CSV
+                    // Error loading Firebase quizzes - CSV quiz tile already displayed
                     Log.e("QuizzesSection", "Error loading Firebase quizzes", task.getException());
-                    setupDefaultQuiz(quizLevelText, gradeLevelText, startQuizButton, 
-                        quizLevelDisplay, defaultQuizId, defaultDifficulty);
+                    // CSV quiz already added, so no need to do anything
+                    updateEmptyState();
                 }
             });
     }
     
     /**
-     * Display Firebase quizzes to student
+     * Add CSV quiz as a tile
+     * CSV quizzes are always accessible (default quiz for each grade from CSV data)
+     * Labeled as "Quiz No. 1" since it's the default quiz
      */
-    private void displayFirebaseQuizzes(java.util.List<com.google.firebase.firestore.QueryDocumentSnapshot> quizzes,
-                                       TextView quizLevelText, TextView gradeLevelText,
-                                       AppCompatButton startQuizButton, LinearLayout quizLevelDisplay) {
+    private void addCSVQuizTile(String quizId, String difficulty) {
+        QuizTileItem item = new QuizTileItem();
+        item.isCSVQuiz = true;
+        item.quizId = quizId;
+        item.difficulty = difficulty;
+        item.quizNumber = "1"; // Always "1" for CSV/default quiz
+        item.quizTitle = "Quiz No. 1"; // Label as Quiz No. 1
         
-        // For now, show the first active quiz (can be enhanced to show multiple)
-        com.google.firebase.firestore.QueryDocumentSnapshot quiz = quizzes.get(0);
+        if (quizTileAdapter != null) {
+            quizTileAdapter.addQuiz(item);
+        }
+    }
+    
+    /**
+     * Add Firebase quiz as a tile
+     */
+    private void addFirebaseQuizTile(com.google.firebase.firestore.QueryDocumentSnapshot quizDoc) {
+        QuizTileItem item = new QuizTileItem();
+        item.isCSVQuiz = false;
+        item.quizDoc = quizDoc;
+        item.quizId = quizDoc.getId();
+        item.quizNumber = quizDoc.getString("quizNumber");
+        item.quizTitle = quizDoc.getString("quizTitle");
         
-        String quizTitle = quiz.getString("quizTitle");
-        String quizNumber = quiz.getString("quizNumber");
-        String quizId = quiz.getId();
+        if (quizTileAdapter != null) {
+            quizTileAdapter.addQuiz(item);
+        }
+        updateEmptyState();
+    }
+    
+    /**
+     * Update empty state visibility based on quiz count
+     */
+    private void updateEmptyState() {
+        if (emptyStateText != null && quizzesRecyclerView != null && quizTileAdapter != null) {
+            int quizCount = quizTileAdapter.getQuizCount();
+            if (quizCount == 0) {
+                emptyStateText.setVisibility(View.VISIBLE);
+                quizzesRecyclerView.setVisibility(View.GONE);
+            } else {
+                emptyStateText.setVisibility(View.GONE);
+                quizzesRecyclerView.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    /**
+     * Start CSV quiz - always accessible (no restrictions)
+     */
+    private void startCSVQuiz(String quizId, String difficulty) {
+        Log.d("QuizAccess", "🎯 Starting CSV quiz: " + quizId + " with difficulty: " + difficulty + " (Always accessible)");
         
-        // Update UI
-        quizLevelText.setText(quizNumber != null ? quizNumber : "1");
-        gradeLevelText.setText(quizTitle != null ? quizTitle : "Grade Quiz");
+        // CSV quizzes are always accessible - no practice or grade checks needed
+        Intent intent = new Intent(this, MultipleChoicePage.class);
+
+        // Set operations based on difficulty
+        if (difficulty.equals("Easy")) {
+            intent.putStringArrayListExtra("operationList", new ArrayList<>(Arrays.asList("Addition", "Subtraction")));
+        } else if (difficulty.equals("Medium")) {
+            intent.putStringArrayListExtra("operationList", new ArrayList<>(Arrays.asList("Addition", "Subtraction", "Multiplication", "Division")));
+        } else if (difficulty.equals("Hard")) {
+            intent.putStringArrayListExtra("operationList", new ArrayList<>(Arrays.asList("Addition", "Subtraction", "Multiplication", "Division", "Decimal", "Percentage")));
+        }
+
+        intent.putExtra("quizId", quizId);
+        intent.putExtra("game_type", "Quiz");
+        intent.putExtra("difficulty", difficulty); // CRITICAL: Pass difficulty to MultipleChoicePage
+        intent.putExtra("heartLimit", 3);
+        intent.putExtra("timerLimit", 10);
+        startActivity(intent);
+    }
+    
+    /**
+     * Start Firebase quiz - check schedule first
+     * Note: The first created quiz (oldest by createdAt) is always available regardless of schedule
+     */
+    private void startFirebaseQuiz(com.google.firebase.firestore.QueryDocumentSnapshot quizDoc) {
+        String quizId = quizDoc.getId();
+        boolean isFirstCreatedQuiz = (firstCreatedQuizId != null && firstCreatedQuizId.equals(quizId));
         
-        // Add animation
-        animateButtonFocus(quizLevelDisplay);
+        if (isFirstCreatedQuiz) {
+            Log.d("QuizzesSection", "🎯 First created quiz detected - bypassing schedule checks");
+            // First created quiz is always available - skip schedule checks
+        } else {
+            // Check if quiz is active, scheduled for future, or expired
+            com.google.firebase.Timestamp startTimestamp = quizDoc.getTimestamp("startDateTime");
+            com.google.firebase.Timestamp endTimestamp = quizDoc.getTimestamp("endDateTime");
+            java.util.Date now = new java.util.Date();
+            boolean isActive = true;
+            boolean isFuture = false;
+            boolean isExpired = false;
+            
+            if (startTimestamp != null && endTimestamp != null) {
+                java.util.Date startDate = startTimestamp.toDate();
+                java.util.Date endDate = endTimestamp.toDate();
+                isFuture = now.before(startDate);
+                isExpired = now.after(endDate);
+                isActive = !isFuture && !isExpired;
+            } else if (startTimestamp != null) {
+                java.util.Date startDate = startTimestamp.toDate();
+                isFuture = now.before(startDate);
+                isActive = !isFuture;
+            }
+            
+            if (isFuture) {
+                // Quiz is scheduled for future
+                if (startTimestamp != null) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+                    String startDateStr = sdf.format(startTimestamp.toDate());
+                    Toast.makeText(this, "Quiz starts on: " + startDateStr, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "Quiz is scheduled for a future date", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+            
+            if (isExpired) {
+                // Quiz has expired
+                if (endTimestamp != null) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+                    String endDateStr = sdf.format(endTimestamp.toDate());
+                    Toast.makeText(this, "Quiz ended on: " + endDateStr, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "This quiz has expired", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+        }
         
-        // Set up button to start Firebase quiz
-        setupFirebaseQuizButton(startQuizButton, quiz);
+        // Quiz is active - start it
+        playSound("click.mp3");
+        
+        // Get quiz data (quizId already declared above)
+        String quizTitle = quizDoc.getString("quizTitle");
+        String quizNumber = quizDoc.getString("quizNumber");
+        java.util.List<Map<String, Object>> questions = 
+            (java.util.List<Map<String, Object>>) quizDoc.get("questions");
+        
+        if (questions == null || questions.isEmpty()) {
+            Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Convert Firebase questions to MathProblem list
+        java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
+        
+        // Start quiz with Firebase questions - same structure as CSV quiz
+        Intent intent = new Intent(this, MultipleChoicePage.class);
+        intent.putExtra("quizId", quizId);
+        intent.putExtra("game_type", "Quiz");
+        intent.putExtra("isFirebaseQuiz", true);
+        intent.putExtra("firebaseQuizTitle", quizTitle != null ? quizTitle : "Custom Quiz");
+        intent.putExtra("firebaseQuizNumber", quizNumber != null ? quizNumber : "1");
+        intent.putExtra("timerLimit", 10); // Default timer limit for quizzes (10 minutes)
+        intent.putParcelableArrayListExtra("firebaseQuestions", 
+            new java.util.ArrayList<>(problemSet));
+        startActivity(intent);
     }
     
     /**
      * Set up button for Firebase quiz
+     * Note: The first created quiz (oldest by createdAt) is always available regardless of schedule
      */
     private void setupFirebaseQuizButton(AppCompatButton startButton, 
                                         com.google.firebase.firestore.QueryDocumentSnapshot quizDoc) {
         
-        startButton.setBackgroundResource(R.drawable.btn_playgame);
-        startButton.setText("START QUIZ");
-        startButton.setClickable(true);
-        startButton.setEnabled(true);
+        String quizId = quizDoc.getId();
+        boolean isFirstCreatedQuiz = (firstCreatedQuizId != null && firstCreatedQuizId.equals(quizId));
         
-        startButton.setOnClickListener(v -> {
-            playSound("click.mp3");
-            
-            // Get quiz data
-            String quizId = quizDoc.getId();
-            java.util.List<Map<String, Object>> questions = 
-                (java.util.List<Map<String, Object>>) quizDoc.get("questions");
-            
-            if (questions == null || questions.isEmpty()) {
-                Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
-                return;
+        // Check if quiz is active, scheduled for future, or expired
+        com.google.firebase.Timestamp startTimestamp = quizDoc.getTimestamp("startDateTime");
+        com.google.firebase.Timestamp endTimestamp = quizDoc.getTimestamp("endDateTime");
+        java.util.Date now = new java.util.Date();
+        boolean isActive = true;
+        boolean isFuture = false;
+        boolean isExpired = false;
+        
+        // First created quiz bypasses schedule checks
+        if (!isFirstCreatedQuiz) {
+            if (startTimestamp != null && endTimestamp != null) {
+                java.util.Date startDate = startTimestamp.toDate();
+                java.util.Date endDate = endTimestamp.toDate();
+                isFuture = now.before(startDate);
+                isExpired = now.after(endDate);
+                isActive = !isFuture && !isExpired; // Active if not future and not expired
+            } else if (startTimestamp != null) {
+                // Only start time set
+                java.util.Date startDate = startTimestamp.toDate();
+                isFuture = now.before(startDate);
+                isActive = !isFuture;
             }
+        } else {
+            Log.d("QuizzesSection", "🎯 First created quiz - button always enabled");
+        }
+        
+        if (isFuture && !isFirstCreatedQuiz) {
+            // Quiz is scheduled for future - disable button
+            startButton.setBackgroundResource(R.drawable.btn_exitgame);
+            startButton.setText("QUIZ SCHEDULED");
+            startButton.setClickable(false);
+            startButton.setEnabled(false);
+            startButton.setAlpha(0.6f);
             
-            // Convert Firebase questions to MathProblem list
-            java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
+            // Show when quiz starts on click
+            startButton.setOnClickListener(v -> {
+                if (startTimestamp != null) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+                    String startDateStr = sdf.format(startTimestamp.toDate());
+                    Toast.makeText(this, "Quiz starts on: " + startDateStr, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "Quiz is scheduled for a future date", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if (isExpired && !isFirstCreatedQuiz) {
+            // Quiz has expired - disable button
+            startButton.setBackgroundResource(R.drawable.btn_exitgame);
+            startButton.setText("QUIZ EXPIRED");
+            startButton.setClickable(false);
+            startButton.setEnabled(false);
+            startButton.setAlpha(0.6f);
             
-            // Start quiz with Firebase questions
-            Intent intent = new Intent(this, MultipleChoicePage.class);
-            intent.putExtra("quizId", quizId);
-            intent.putExtra("game_type", "Quiz");
-            intent.putExtra("isFirebaseQuiz", true);
-            intent.putParcelableArrayListExtra("firebaseQuestions", 
-                new java.util.ArrayList<>(problemSet));
-            startActivity(intent);
-        });
+            // Show when quiz ended on click
+            startButton.setOnClickListener(v -> {
+                if (endTimestamp != null) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+                    String endDateStr = sdf.format(endTimestamp.toDate());
+                    Toast.makeText(this, "Quiz ended on: " + endDateStr, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "This quiz has expired", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            // Quiz is active (or first created quiz) - enable button
+            startButton.setBackgroundResource(R.drawable.btn_playgame);
+            startButton.setText("START QUIZ");
+            startButton.setClickable(true);
+            startButton.setEnabled(true);
+            startButton.setAlpha(1.0f);
+            
+            startButton.setOnClickListener(v -> {
+                playSound("click.mp3");
+                
+                // Get quiz data (quizId already declared above)
+                String quizTitle = quizDoc.getString("quizTitle");
+                String quizNumber = quizDoc.getString("quizNumber");
+                java.util.List<Map<String, Object>> questions = 
+                    (java.util.List<Map<String, Object>>) quizDoc.get("questions");
+                
+                if (questions == null || questions.isEmpty()) {
+                    Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Convert Firebase questions to MathProblem list
+                java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
+                
+                // Start quiz with Firebase questions - same structure as CSV quiz
+                Intent intent = new Intent(this, MultipleChoicePage.class);
+                intent.putExtra("quizId", quizId);
+                intent.putExtra("game_type", "Quiz");
+                intent.putExtra("isFirebaseQuiz", true);
+                intent.putExtra("firebaseQuizTitle", quizTitle != null ? quizTitle : "Custom Quiz");
+                intent.putExtra("firebaseQuizNumber", quizNumber != null ? quizNumber : "1");
+                intent.putExtra("timerLimit", 10); // Default timer limit for quizzes (10 minutes)
+                intent.putParcelableArrayListExtra("firebaseQuestions", 
+                    new java.util.ArrayList<>(problemSet));
+                startActivity(intent);
+            });
+        }
     }
     
     /**
@@ -653,5 +986,88 @@ public class QuizzesSection extends AppCompatActivity {
         super.onStart();
 
         MusicManager.resume();
+    }
+    
+    /**
+     * Quiz tile item data class
+     */
+    private static class QuizTileItem {
+        boolean isCSVQuiz;
+        String quizId;
+        String quizNumber;
+        String quizTitle;
+        String difficulty;
+        com.google.firebase.firestore.QueryDocumentSnapshot quizDoc;
+    }
+    
+    /**
+     * Adapter for quiz tiles in grid layout
+     */
+    private class QuizTileAdapter extends RecyclerView.Adapter<QuizTileAdapter.QuizTileViewHolder> {
+        private java.util.List<QuizTileItem> quizItems;
+        
+        public QuizTileAdapter() {
+            this.quizItems = new java.util.ArrayList<>();
+        }
+        
+        public void addQuiz(QuizTileItem item) {
+            quizItems.add(item);
+            notifyItemInserted(quizItems.size() - 1);
+            // Notify parent activity to update empty state
+            if (QuizzesSection.this != null) {
+                QuizzesSection.this.updateEmptyState();
+            }
+        }
+        
+        public int getQuizCount() {
+            return quizItems.size();
+        }
+        
+        @Override
+        public QuizTileViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            android.view.View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_quiz_tile, parent, false);
+            return new QuizTileViewHolder(view);
+        }
+        
+        @Override
+        public void onBindViewHolder(QuizTileViewHolder holder, int position) {
+            QuizTileItem item = quizItems.get(position);
+            
+            // Set quiz number (pure tile - just the number)
+            holder.quizLevelText.setText(item.quizNumber != null ? item.quizNumber : "1");
+            
+            // Add animation to the tile
+            animateButtonFocus(holder.quizTileContainer);
+            
+            // Make entire tile clickable
+            holder.quizTileContainer.setOnClickListener(v -> {
+                playSound("click.mp3");
+                
+                if (item.isCSVQuiz) {
+                    // CSV quiz - always accessible, no restrictions
+                    startCSVQuiz(item.quizId, item.difficulty);
+                } else {
+                    // Firebase quiz - check schedule and start
+                    startFirebaseQuiz(item.quizDoc);
+                }
+            });
+        }
+        
+        @Override
+        public int getItemCount() {
+            return quizItems.size();
+        }
+        
+        class QuizTileViewHolder extends RecyclerView.ViewHolder {
+            LinearLayout quizTileContainer;
+            TextView quizLevelText;
+            
+            QuizTileViewHolder(android.view.View itemView) {
+                super(itemView);
+                quizTileContainer = itemView.findViewById(R.id.quiz_tile_container);
+                quizLevelText = itemView.findViewById(R.id.quiz_level_text);
+            }
+        }
     }
 }

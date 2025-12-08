@@ -101,6 +101,9 @@ public class Results extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_results);
 
+        // Register back button handler - navigate to MainActivity
+        com.happym.mathsquare.utils.BackButtonHandler.registerBackToMain(this);
+
         // Firestore instance
         db = FirebaseFirestore.getInstance();
 

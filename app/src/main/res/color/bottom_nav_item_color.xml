@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected state - use vibrant accent color -->
+    <item android:color="@color/colorAccent" android:state_checked="true" android:alpha="1.0" />
+    <item android:color="@color/colorAccent" android:state_selected="true" android:alpha="1.0" />
+    
+    <!-- Unselected state - use a softer gray that matches app design -->
+    <item android:color="#757575" android:alpha="0.6" />
+</selector>
+

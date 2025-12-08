@@ -156,6 +156,17 @@ public class MultipleChoicePage extends AppCompatActivity
         setContentView(R.layout.activity_multiplechoice);
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
+        
+        // Register back button handler - show pause dialog instead of exiting
+        androidx.activity.OnBackPressedCallback callback = new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Show pause dialog instead of directly exiting
+                showPauseDialog();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
+        
         imgBtn_pause = findViewById(R.id.imgBtn_pause);
 
         operationTextView = findViewById(R.id.text_operation);
@@ -572,6 +583,8 @@ private void generateNewQuestionList(int currentQIndex, List<MathProblem> source
             givenOneTextView.setText(formattedGivens[0] + "%");
             givenTwoTextView.setText(formattedGivens.length > 1 ? formattedGivens[1] : "");
             text_operator.setText("of");
+            // Update operation header to match
+            operationTextView.setText("Percentage");
             Log.d("QuestionDisplay", "Set percentage format: " + formattedGivens[0] + "% of " + formattedGivens[1]);
         } else if ("Decimals".equalsIgnoreCase(currentProblem.getOperation())) {
             // For decimals: determine and show the correct operation
@@ -586,18 +599,23 @@ private void generateNewQuestionList(int currentQIndex, List<MathProblem> source
 
             if (Math.abs((n1 + n2) - answer) < 0.001) {
                 text_operator.setText("+");
+                operationTextView.setText("Decimal Addition");
                 Log.d("QuestionDisplay", "Set decimal addition: " + n1 + " + " + n2 + " = " + answer);
             } else if (Math.abs((n1 - n2) - answer) < 0.001) {
                 text_operator.setText("-");
+                operationTextView.setText("Decimal Subtraction");
                 Log.d("QuestionDisplay", "Set decimal subtraction: " + n1 + " - " + n2 + " = " + answer);
             } else if (Math.abs((n1 * n2) - answer) < 0.001) {
                 text_operator.setText("×");
+                operationTextView.setText("Decimal Multiplication");
                 Log.d("QuestionDisplay", "Set decimal multiplication: " + n1 + " × " + n2 + " = " + answer);
             } else if (n2 != 0 && Math.abs((n1 / n2) - answer) < 0.001) {
                 text_operator.setText("÷");
+                operationTextView.setText("Decimal Division");
                 Log.d("QuestionDisplay", "Set decimal division: " + n1 + " ÷ " + n2 + " = " + answer);
             } else {
                 text_operator.setText("+"); // Default fallback
+                operationTextView.setText("Decimal Addition");
                 Log.d("QuestionDisplay", "Used fallback addition for: " + n1 + " ? " + n2 + " = " + answer);
             }
         } else {
@@ -695,6 +713,8 @@ private void generateNewQuestion(int currentQIndex, List<MathProblem> sourceQues
                 givenOneTextView.setText(formattedGivens[0] + "%");
                 givenTwoTextView.setText(formattedGivens.length > 1 ? formattedGivens[1] : "");
                 text_operator.setText("of");
+                // Update operation header to match
+                operationTextView.setText("Percentage");
             } else if ("Decimals".equalsIgnoreCase(currentProblem.getOperation())) {
                 // For decimals: determine and show the correct operation
                 String[] formattedGivens = currentProblem.getFormattedGivenNumbers();
@@ -708,21 +728,81 @@ private void generateNewQuestion(int currentQIndex, List<MathProblem> sourceQues
 
                 if (Math.abs((n1 + n2) - answer) < 0.001) {
                     text_operator.setText("+");
+                    operationTextView.setText("Decimal Addition");
                 } else if (Math.abs((n1 - n2) - answer) < 0.001) {
                     text_operator.setText("-");
+                    operationTextView.setText("Decimal Subtraction");
                 } else if (Math.abs((n1 * n2) - answer) < 0.001) {
                     text_operator.setText("×");
+                    operationTextView.setText("Decimal Multiplication");
                 } else if (n2 != 0 && Math.abs((n1 / n2) - answer) < 0.001) {
                     text_operator.setText("÷");
+                    operationTextView.setText("Decimal Division");
                 } else {
                     text_operator.setText("+"); // Default fallback
+                    operationTextView.setText("Decimal Addition");
                 }
             } else {
                 // For regular operations: use normal formatting
                 String[] formattedGivens = currentProblem.getFormattedGivenNumbers();
                 givenOneTextView.setText(formattedGivens[0]);
                 givenTwoTextView.setText(formattedGivens.length > 1 ? formattedGivens[1] : "");
-                // text_operator is already set in setupProblemSet
+                
+                // Set operator and operation header based on the actual problem's operation
+                // This ensures both the symbol and title match the question
+                String problemOperation = currentProblem.getOperation();
+                android.util.Log.d("QuestionDisplay", "Problem operation (Firebase): '" + problemOperation + "'");
+                
+                if (problemOperation != null) {
+                    String opLower = problemOperation.toLowerCase().trim();
+                    android.util.Log.d("QuestionDisplay", "Normalized operation: '" + opLower + "'");
+                    
+                    switch (opLower) {
+                        case "addition":
+                            text_operator.setText("+");
+                            operationTextView.setText("Addition");
+                            android.util.Log.d("QuestionDisplay", "Set operator to + and header to Addition");
+                            break;
+                        case "subtraction":
+                            text_operator.setText("-");
+                            operationTextView.setText("Subtraction");
+                            android.util.Log.d("QuestionDisplay", "Set operator to - and header to Subtraction");
+                            break;
+                        case "multiplication":
+                            text_operator.setText("×");
+                            operationTextView.setText("Multiplication");
+                            android.util.Log.d("QuestionDisplay", "Set operator to × and header to Multiplication");
+                            break;
+                        case "division":
+                            text_operator.setText("÷");
+                            operationTextView.setText("Division");
+                            android.util.Log.d("QuestionDisplay", "Set operator to ÷ and header to Division");
+                            break;
+                        default:
+                            // Fallback: try to infer from question text or use what was set
+                            android.util.Log.w("QuestionDisplay", "Unknown operation: '" + problemOperation + "', using fallback");
+                            // Try to infer operator from question text if possible
+                            String questionText = currentProblem.getQuestion();
+                            if (questionText != null) {
+                                if (questionText.contains("+")) {
+                                    text_operator.setText("+");
+                                    operationTextView.setText("Addition");
+                                } else if (questionText.contains("-")) {
+                                    text_operator.setText("-");
+                                    operationTextView.setText("Subtraction");
+                                } else if (questionText.contains("×") || questionText.contains("*")) {
+                                    text_operator.setText("×");
+                                    operationTextView.setText("Multiplication");
+                                } else if (questionText.contains("÷") || questionText.contains("/")) {
+                                    text_operator.setText("÷");
+                                    operationTextView.setText("Division");
+                                }
+                            }
+                            break;
+                    }
+                } else {
+                    android.util.Log.e("QuestionDisplay", "Problem operation is null!");
+                }
             }
 
             List<String> choicesList = currentProblem.getFormattedChoices();
@@ -1505,8 +1585,10 @@ private void playEffectSound(String fileName) {
     }
 
     @Override
+    @Deprecated
     public void onBackPressed() {
-        // Show pause dialog instead of directly exiting
+        // Deprecated - use OnBackPressedDispatcher instead
+        // This method is kept for backward compatibility but should not be used
         showPauseDialog();
     }
 

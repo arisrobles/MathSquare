@@ -53,6 +53,11 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
     // Question edit mode variables
     private Integer editingQuestionIndex = null;
     
+    // Teacher assignment variables
+    private String assignedGrade = null;
+    private String assignedSection = null;
+    private String teacherEmail = null;
+    
     @Override
     protected void onStart() {
         super.onStart();
@@ -78,8 +83,9 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
     }
     
     @Override
+    @Deprecated
     public void onBackPressed() {
-        Log.d("QuizCreator", "onBackPressed called");
+        Log.d("QuizCreator", "onBackPressed called (deprecated)");
         // Check if there are unsaved changes
         if (hasUnsavedChanges()) {
             com.happym.mathsquare.utils.BackButtonHandler.showExitConfirmation(
@@ -137,8 +143,18 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
             FirebaseApp.initializeApp(this);
             db = FirebaseFirestore.getInstance();
             
+            // Register back button handler with unsaved changes check
+            com.happym.mathsquare.utils.BackButtonHandler.registerBackWithUnsavedChanges(
+                this,
+                () -> hasUnsavedChanges(),
+                () -> finish()
+            );
+            
             questionsList = new ArrayList<>();
             sectionsList = new ArrayList<>();
+            
+            // Get teacher email
+            teacherEmail = sharedPreferences.getEmail(this);
             
             // Initialize views
             quizTitleEditText = findViewById(R.id.editQuizTitle);
@@ -166,9 +182,8 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                 return;
             }
             
-            // Setup spinners
-            setupSpinners();
-            loadSections();
+            // Fetch teacher's assigned grade and section, then setup spinners
+            fetchTeacherAssignments();
             
             // Setup date/time buttons
             setupDateTimeButtons();
@@ -203,45 +218,186 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
         }
     }
     
-    private void setupSpinners() {
-        // Grade spinner
-        String[] grades = {"1", "2", "3", "4", "5", "6"};
-        android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, grades);
-        gradeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        gradeSpinner.setAdapter(gradeAdapter);
+    /**
+     * Fetch teacher's assigned grade and section from TeacherProfiles
+     */
+    private void fetchTeacherAssignments() {
+        if (teacherEmail == null || teacherEmail.isEmpty()) {
+            Log.w("QuizCreator", "Teacher email not found, allowing all grades/sections");
+            // Fallback: allow all grades/sections if email not found
+            setupSpinners();
+            loadSections();
+            return;
+        }
         
-        // Section spinner will be populated dynamically
+        Log.d("QuizCreator", "Fetching teacher assignments for: " + teacherEmail);
+        
+        db.collection("TeacherProfiles")
+            .whereEqualTo("email", teacherEmail)
+            .limit(1)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                    com.google.firebase.firestore.QueryDocumentSnapshot teacherDoc = 
+                        (com.google.firebase.firestore.QueryDocumentSnapshot) task.getResult().getDocuments().get(0);
+                    assignedGrade = teacherDoc.getString("assignedGrade");
+                    assignedSection = teacherDoc.getString("assignedSection");
+                    
+                    Log.d("QuizCreator", "Teacher assigned - Grade: " + assignedGrade + ", Section: " + assignedSection);
+                    
+                    if (assignedGrade != null && assignedSection != null && 
+                        !assignedGrade.isEmpty() && !assignedSection.isEmpty()) {
+                        // Teacher has assigned grade and section - restrict spinners
+                        setupSpinners();
+                        loadSections();
+                    } else {
+                        // Teacher doesn't have assignments - show warning but allow all
+                        Log.w("QuizCreator", "Teacher has no assigned grade/section");
+                        Toast.makeText(this, "Warning: No assigned grade/section found. All options available.", Toast.LENGTH_LONG).show();
+                        setupSpinners();
+                        loadSections();
+                    }
+                } else {
+                    // Teacher profile not found - show warning but allow all
+                    Log.w("QuizCreator", "Teacher profile not found in TeacherProfiles");
+                    Toast.makeText(this, "Warning: Teacher profile not found. All options available.", Toast.LENGTH_LONG).show();
+                    setupSpinners();
+                    loadSections();
+                }
+            })
+            .addOnFailureListener(e -> {
+                Log.e("QuizCreator", "Error fetching teacher assignments: " + e.getMessage());
+                Toast.makeText(this, "Error loading teacher assignments. All options available.", Toast.LENGTH_LONG).show();
+                // Fallback: allow all grades/sections
+                setupSpinners();
+                loadSections();
+            });
+    }
+    
+    private void setupSpinners() {
+        // If teacher has assigned grade, only show that grade
+        if (assignedGrade != null && !assignedGrade.isEmpty()) {
+            // Only show the assigned grade
+            String[] grades = {assignedGrade};
+            android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
+                this, R.layout.spinner_item, grades);
+            gradeAdapter.setDropDownViewResource(R.layout.spinner_item);
+            gradeSpinner.setAdapter(gradeAdapter);
+            gradeSpinner.setSelection(0); // Auto-select the assigned grade
+            gradeSpinner.setEnabled(false); // Disable spinner - teacher can't change it
+            
+            Log.d("QuizCreator", "Grade spinner restricted to assigned grade: " + assignedGrade);
+        } else {
+            // Fallback: show all grades if no assignment
+            String[] grades = {"1", "2", "3", "4", "5", "6"};
+            android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
+                this, R.layout.spinner_item, grades);
+            gradeAdapter.setDropDownViewResource(R.layout.spinner_item);
+            gradeSpinner.setAdapter(gradeAdapter);
+        }
+        
+        // Section spinner will be populated dynamically in loadSections()
     }
     
     private void loadSections() {
-        db.collection("Sections")
-            .orderBy("Grade_Number", com.google.firebase.firestore.Query.Direction.ASCENDING)
-            .get()
-            .addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null) {
-                    sectionsList.clear();
-                    List<String> sectionDisplayList = new ArrayList<>();
-                    sectionDisplayList.add("All Sections");
-                    
-                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : task.getResult()) {
-                        Long gradeNumLong = doc.getLong("Grade_Number");
-                        String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
-                        String section = doc.getString("Section");
-                        String docId = doc.getId();
+        // If teacher has assigned grade and section, only load that specific section
+        if (assignedGrade != null && assignedSection != null && 
+            !assignedGrade.isEmpty() && !assignedSection.isEmpty()) {
+            
+            Log.d("QuizCreator", "Loading sections for assigned grade: " + assignedGrade + ", section: " + assignedSection);
+            
+            // Query sections for the assigned grade only
+            Long gradeNumber = null;
+            try {
+                gradeNumber = Long.parseLong(assignedGrade);
+            } catch (NumberFormatException e) {
+                Log.e("QuizCreator", "Invalid grade number: " + assignedGrade);
+                Toast.makeText(this, "Error: Invalid grade assignment", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            db.collection("Sections")
+                .whereEqualTo("Grade_Number", gradeNumber)
+                .whereEqualTo("Section", assignedSection.trim())
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        sectionsList.clear();
+                        List<String> sectionDisplayList = new ArrayList<>();
                         
-                        if (grade != null && section != null) {
-                            sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
-                            sectionDisplayList.add("Grade " + grade + " - " + section);
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : task.getResult()) {
+                            String grade = String.valueOf(doc.getLong("Grade_Number").intValue());
+                            String section = doc.getString("Section");
+                            String docId = doc.getId();
+                            
+                            if (section != null) {
+                                sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
+                                sectionDisplayList.add("Grade " + grade + " - " + section);
+                            }
                         }
+                        
+                        if (sectionDisplayList.isEmpty()) {
+                            // Section not found, but still allow teacher to proceed with assigned section
+                            Log.w("QuizCreator", "Assigned section not found in Sections collection, using assigned values directly");
+                            sectionsList.add(new com.happym.mathsquare.Model.Sections(assignedSection.trim(), assignedGrade, ""));
+                            sectionDisplayList.add("Grade " + assignedGrade + " - " + assignedSection);
+                        }
+                        
+                        android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
+                            this, R.layout.spinner_item, sectionDisplayList);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionSpinner.setAdapter(sectionAdapter);
+                        sectionSpinner.setSelection(0); // Auto-select the assigned section
+                        sectionSpinner.setEnabled(false); // Disable spinner - teacher can't change it
+                        
+                        Log.d("QuizCreator", "Section spinner restricted to assigned section: " + assignedSection);
+                    } else {
+                        Log.e("QuizCreator", "Error loading sections: " + (task.getException() != null ? task.getException().getMessage() : "Unknown"));
+                        // Fallback: use assigned section directly
+                        sectionsList.clear();
+                        List<String> sectionDisplayList = new ArrayList<>();
+                        sectionsList.add(new com.happym.mathsquare.Model.Sections(assignedSection.trim(), assignedGrade, ""));
+                        sectionDisplayList.add("Grade " + assignedGrade + " - " + assignedSection);
+                        
+                        android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
+                            this, R.layout.spinner_item, sectionDisplayList);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionSpinner.setAdapter(sectionAdapter);
+                        sectionSpinner.setSelection(0);
+                        sectionSpinner.setEnabled(false);
                     }
-                    
-                    android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
-                        this, android.R.layout.simple_spinner_item, sectionDisplayList);
-                    sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    sectionSpinner.setAdapter(sectionAdapter);
-                }
-            });
+                });
+        } else {
+            // Fallback: load all sections if teacher has no assignment
+            Log.d("QuizCreator", "No assigned grade/section, loading all sections");
+            db.collection("Sections")
+                .orderBy("Grade_Number", com.google.firebase.firestore.Query.Direction.ASCENDING)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        sectionsList.clear();
+                        List<String> sectionDisplayList = new ArrayList<>();
+                        sectionDisplayList.add("All Sections");
+                        
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : task.getResult()) {
+                            Long gradeNumLong = doc.getLong("Grade_Number");
+                            String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
+                            String section = doc.getString("Section");
+                            String docId = doc.getId();
+                            
+                            if (grade != null && section != null) {
+                                sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
+                                sectionDisplayList.add("Grade " + grade + " - " + section);
+                            }
+                        }
+                        
+                        android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
+                            this, R.layout.spinner_item, sectionDisplayList);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionSpinner.setAdapter(sectionAdapter);
+                    }
+                });
+        }
     }
     
     private void setupDateTimeButtons() {
@@ -328,15 +484,15 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
         // Operation spinner
         String[] operations = {"Addition", "Subtraction", "Multiplication", "Division", "Decimal", "Percentage"};
         android.widget.ArrayAdapter<String> operationAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, operations);
-        operationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            this, R.layout.spinner_item, operations);
+        operationAdapter.setDropDownViewResource(R.layout.spinner_item);
         operationSpinner.setAdapter(operationAdapter);
         
         // Difficulty spinner
         String[] difficulties = {"Easy", "Medium", "Hard"};
         android.widget.ArrayAdapter<String> difficultyAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, difficulties);
-        difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            this, R.layout.spinner_item, difficulties);
+        difficultyAdapter.setDropDownViewResource(R.layout.spinner_item);
         difficultySpinner.setAdapter(difficultyAdapter);
     }
     
@@ -802,18 +958,50 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
             return;
         }
         
-        String grade = gradeSpinner.getSelectedItem().toString();
-        String selectedSectionDisplay = sectionSpinner.getSelectedItem().toString();
+        // Get grade - use assigned grade if available, otherwise use spinner selection
+        String grade;
+        if (assignedGrade != null && !assignedGrade.isEmpty()) {
+            grade = assignedGrade;
+            Log.d("QuizCreator", "Using assigned grade: " + grade);
+        } else {
+            grade = gradeSpinner.getSelectedItem().toString();
+        }
         
-        // Get section info
+        // Get section - use assigned section if available, otherwise use spinner selection
         String section = null;
         String sectionId = null;
-        if (!selectedSectionDisplay.equals("All Sections") && sectionSpinner.getSelectedItemPosition() > 0) {
-            int sectionIndex = sectionSpinner.getSelectedItemPosition() - 1;
-            if (sectionIndex >= 0 && sectionIndex < sectionsList.size()) {
-                com.happym.mathsquare.Model.Sections selectedSection = sectionsList.get(sectionIndex);
-                section = selectedSection.getSection();
-                sectionId = selectedSection.getDocId();
+        
+        if (assignedSection != null && !assignedSection.isEmpty()) {
+            // Use assigned section directly
+            section = assignedSection.trim();
+            // Try to find the section ID from sectionsList
+            for (com.happym.mathsquare.Model.Sections sec : sectionsList) {
+                if (sec.getSection().trim().equals(section) && sec.getGrade().equals(grade)) {
+                    sectionId = sec.getDocId();
+                    break;
+                }
+            }
+            Log.d("QuizCreator", "Using assigned section: " + section);
+        } else {
+            // Fallback to spinner selection
+            String selectedSectionDisplay = sectionSpinner.getSelectedItem().toString();
+            if (!selectedSectionDisplay.equals("All Sections") && sectionSpinner.getSelectedItemPosition() >= 0) {
+                int sectionIndex = sectionSpinner.getSelectedItemPosition();
+                // Adjust index if "All Sections" is the first item
+                if (selectedSectionDisplay.equals("All Sections")) {
+                    section = null; // Will default to "All Sections" in quizData
+                } else {
+                    // Check if first item is "All Sections" by checking spinner adapter
+                    android.widget.ArrayAdapter adapter = (android.widget.ArrayAdapter) sectionSpinner.getAdapter();
+                    if (adapter != null && adapter.getCount() > 0 && adapter.getItem(0).toString().equals("All Sections")) {
+                        sectionIndex = sectionSpinner.getSelectedItemPosition() - 1;
+                    }
+                    if (sectionIndex >= 0 && sectionIndex < sectionsList.size()) {
+                        com.happym.mathsquare.Model.Sections selectedSection = sectionsList.get(sectionIndex);
+                        section = selectedSection.getSection();
+                        sectionId = selectedSection.getDocId();
+                    }
+                }
             }
         }
         
@@ -931,6 +1119,15 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                             
                             // Load grade
                             String grade = quizData.get("grade") != null ? quizData.get("grade").toString() : "1";
+                            
+                            // Validate: if teacher has assigned grade, ensure quiz matches it
+                            if (assignedGrade != null && !assignedGrade.isEmpty() && !grade.equals(assignedGrade)) {
+                                Toast.makeText(this, "Error: This quiz is for a different grade than your assignment. You can only edit quizzes for Grade " + assignedGrade, Toast.LENGTH_LONG).show();
+                                Log.w("QuizCreator", "Quiz grade (" + grade + ") doesn't match assigned grade (" + assignedGrade + ")");
+                                finish();
+                                return;
+                            }
+                            
                             if (gradeSpinner != null) {
                                 for (int i = 0; i < gradeSpinner.getCount(); i++) {
                                     if (gradeSpinner.getItemAtPosition(i).toString().equals(grade)) {
@@ -944,6 +1141,16 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                             // This will be handled after sections are loaded
                             final String section = quizData.get("section") != null ? quizData.get("section").toString() : "All Sections";
                             final String sectionId = quizData.get("sectionId") != null ? quizData.get("sectionId").toString() : null;
+                            
+                            // Validate: if teacher has assigned section, ensure quiz matches it
+                            if (assignedSection != null && !assignedSection.isEmpty() && 
+                                section != null && !section.equals("All Sections") && 
+                                !section.trim().equals(assignedSection.trim())) {
+                                Toast.makeText(this, "Error: This quiz is for a different section than your assignment. You can only edit quizzes for Section " + assignedSection, Toast.LENGTH_LONG).show();
+                                Log.w("QuizCreator", "Quiz section (" + section + ") doesn't match assigned section (" + assignedSection + ")");
+                                finish();
+                                return;
+                            }
                             
                             // Load date/time
                             com.google.firebase.Timestamp startTimestamp = (com.google.firebase.Timestamp) quizData.get("startDateTime");
@@ -1001,19 +1208,42 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
      * Sets the section spinner selection based on section name and ID
      */
     private void setSectionSelection(String sectionName, String sectionId) {
+        if (sectionSpinner == null || sectionsList == null || sectionsList.isEmpty()) {
+            Log.w("QuizCreator", "Cannot set section selection - spinner or list is null/empty");
+            return;
+        }
+        
+        // Check if spinner has "All Sections" as first item
+        android.widget.ArrayAdapter adapter = (android.widget.ArrayAdapter) sectionSpinner.getAdapter();
+        boolean hasAllSections = adapter != null && adapter.getCount() > 0 && 
+                                  adapter.getItem(0).toString().equals("All Sections");
+        
         if (sectionName == null || sectionName.equals("All Sections")) {
             sectionSpinner.setSelection(0);
             return;
         }
         
+        // Find matching section in list
         for (int i = 0; i < sectionsList.size(); i++) {
             com.happym.mathsquare.Model.Sections section = sectionsList.get(i);
-            if (section.getSection().equals(sectionName) || 
-                (sectionId != null && section.getDocId().equals(sectionId))) {
-                sectionSpinner.setSelection(i + 1); // +1 because "All Sections" is at index 0
-                break;
+            if (section.getSection().trim().equals(sectionName.trim()) || 
+                (sectionId != null && !sectionId.isEmpty() && section.getDocId().equals(sectionId))) {
+                // Adjust index: if "All Sections" is first, add 1; otherwise use index directly
+                int selectionIndex = hasAllSections ? i + 1 : i;
+                if (selectionIndex < sectionSpinner.getCount()) {
+                    sectionSpinner.setSelection(selectionIndex);
+                    Log.d("QuizCreator", "Set section selection to index " + selectionIndex + " for section: " + sectionName);
+                } else {
+                    Log.w("QuizCreator", "Selection index " + selectionIndex + " out of bounds (count: " + sectionSpinner.getCount() + ")");
+                    sectionSpinner.setSelection(0); // Fallback to first item
+                }
+                return;
             }
         }
+        
+        // Section not found in list - this shouldn't happen if teacher has assignment
+        Log.w("QuizCreator", "Section not found in list: " + sectionName);
+        sectionSpinner.setSelection(0); // Fallback to first item
     }
 }
 

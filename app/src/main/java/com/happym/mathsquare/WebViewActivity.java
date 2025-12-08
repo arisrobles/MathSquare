@@ -138,6 +138,25 @@ setupWebView();
         
         // Filter tutorials based on grade level
         filterTutorialsByGrade();
+        
+        // Register back button handler for WebView navigation
+        androidx.activity.OnBackPressedCallback callback = new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView != null && webView.getVisibility() == View.VISIBLE) {
+                    // Check if WebView can go back
+                    if (webView.canGoBack()) {
+                        webView.goBack();  // Navigate back in WebView history if possible
+                    } else {
+                        webView.setVisibility(View.GONE);  // Hide WebView if no more history
+                        MusicManager.resume();
+                    }
+                } else {
+                    finish();  // Exit activity if WebView is not visible
+                }
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
     // Method to open the tutorial in WebView
@@ -334,19 +353,20 @@ protected void onDestroy() {
     }
 
     @Override
-public void onBackPressed() {
-    if (webView.getVisibility() == View.VISIBLE) {
-        // Check if WebView can go back
-        if (webView.canGoBack()) {
-            webView.goBack();  // Navigate back in WebView history if possible
-        } else {
-            webView.setVisibility(View.GONE);  // Hide WebView if no more history
+    @Deprecated
+    public void onBackPressed() {
+        if (webView != null && webView.getVisibility() == View.VISIBLE) {
+            // Check if WebView can go back
+            if (webView.canGoBack()) {
+                webView.goBack();  // Navigate back in WebView history if possible
+            } else {
+                webView.setVisibility(View.GONE);  // Hide WebView if no more history
                 MusicManager.resume();
+            }
+        } else {
+            super.onBackPressed();  // Exit activity if WebView is not visible
         }
-    } else {
-        super.onBackPressed();  // Exit activity if WebView is not visible
     }
-}
 
 
     /*

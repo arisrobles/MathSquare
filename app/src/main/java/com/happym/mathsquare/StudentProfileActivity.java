@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.happym.mathsquare.sharedPreferences;
+import com.happym.mathsquare.utils.BackButtonHandler;
 import androidx.core.view.WindowCompat;
 
 public class StudentProfileActivity extends AppCompatActivity {
@@ -37,6 +38,17 @@ public class StudentProfileActivity extends AppCompatActivity {
         
         FirebaseApp.initializeApp(this);
         setContentView(R.layout.layout_student_profile);
+        
+        // Setup custom game-style back button
+        LinearLayout btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+            // Add button animation effect
+            animateButtonFocus(btnBack);
+        }
+        
+        // Register back button handler
+        BackButtonHandler.registerStandardBack(this);
         
         db = FirebaseFirestore.getInstance();
         

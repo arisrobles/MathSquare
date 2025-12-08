@@ -23,14 +23,17 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@drawable/bottom_nav_background"
+        android:elevation="12dp"
+        android:paddingTop="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/adminmenu"
-        app:itemIconTint="@color/colorAccent"
-        app:itemTextColor="@color/colorAccent"
-        app:itemIconSize="36dp"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemIconSize="34dp"
+        app:itemRippleColor="#30FF4081"
         app:labelVisibilityMode="unlabeled"
         android:id="@+id/bottomNavigationView" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -95,6 +95,23 @@ public class PDFViewerActivity extends AppCompatActivity {
         btnPrevious.setOnClickListener(v -> previousPage());
         btnFullScreen.setOnClickListener(v -> toggleFullScreen());
         btnClose.setOnClickListener(v -> finish());
+        
+        // Register back button handler for PDF/Video navigation
+        androidx.activity.OnBackPressedCallback callback = new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (isVideoShowing) {
+                    // If video is showing, go back to last PDF page
+                    hideVideo();
+                    showPage(totalPages - 1);
+                } else if (isFullScreen) {
+                    toggleFullScreen();
+                } else {
+                    finish();
+                }
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
 
         // Add touch listener to PDF view to toggle controls in landscape
         pdfImageView.setOnClickListener(v -> {
@@ -573,6 +590,7 @@ public class PDFViewerActivity extends AppCompatActivity {
     }
 
     @Override
+    @Deprecated
     public void onBackPressed() {
         if (isVideoShowing) {
             // If video is showing, go back to last PDF page

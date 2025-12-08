@@ -74,8 +74,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="text"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -93,8 +93,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="number"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -110,7 +110,8 @@
                         android:id="@+id/spinnerGrade"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/paytone_one" />
+                        android:fontFamily="@font/paytone_one"
+                        android:popupBackground="@color/white" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -126,7 +127,8 @@
                         android:id="@+id/spinnerSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/paytone_one" />
+                        android:fontFamily="@font/paytone_one"
+                        android:popupBackground="@color/white" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -250,7 +252,8 @@
                         android:id="@+id/spinnerOperation"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/paytone_one" />
+                        android:fontFamily="@font/paytone_one"
+                        android:popupBackground="@color/white" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -266,7 +269,8 @@
                         android:id="@+id/spinnerDifficulty"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/paytone_one" />
+                        android:fontFamily="@font/paytone_one"
+                        android:popupBackground="@color/white" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -284,8 +288,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -303,8 +307,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -322,8 +326,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -341,8 +345,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -360,8 +364,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -379,8 +383,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -398,8 +402,8 @@
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
                         android:fontFamily="@font/paytone_one"
-                        android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColor="#204520"
+                        android:textColorHint="#757575" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 

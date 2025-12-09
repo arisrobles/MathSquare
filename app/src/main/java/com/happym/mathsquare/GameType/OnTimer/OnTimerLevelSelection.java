@@ -130,21 +130,7 @@ if ("Addition".equals(operation)) {
     operationDisplayIcon.setImageResource(R.drawable.btn_operation_add);
 }
 
-        if ("grade_one".equals(difficulty)) {
-   difficultySection = "Easy";
-} else if ("grade_two".equals(difficulty)) {
-    difficultySection = "Easy";
-} else if ("grade_three".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_four".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_five".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_six".equals(difficulty)) {
-    difficultySection = "Harf";
-} else {
-    difficultySection = "Easy";
-}
+        difficultySection = (difficulty != null && !difficulty.isEmpty()) ? difficulty : "Easy";
 
         FrameLayout[] levels = {
             ontimerone, ontimertwo, ontimerthree
@@ -158,14 +144,7 @@ if ("Addition".equals(operation)) {
 
                 Intent intent = new Intent(OnTimerLevelSelection.this, MultipleChoicePage.class);
     intent.putExtra("operation", operation);
-    // For percentage and decimal operations, pass the actual grade level
-    if ("Percentage".equals(operation) || "Decimal".equals(operation) || 
-        "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) || 
-        "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-        intent.putExtra("difficulty", difficulty);
-    } else {
-        intent.putExtra("difficulty", difficultySection);
-    }
+    intent.putExtra("difficulty", difficultySection);
                 intent.putExtra("game_type", "OnTimer");
                 intent.putExtra("heartLimit", 5);
                 intent.putExtra("timerLimit", 10);
@@ -182,14 +161,7 @@ if ("Addition".equals(operation)) {
 
                 Intent intent = new Intent(OnTimerLevelSelection.this, MultipleChoicePage.class);
     intent.putExtra("operation", operation);
-    // For percentage and decimal operations, pass the actual grade level
-    if ("Percentage".equals(operation) || "Decimal".equals(operation) || 
-        "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) || 
-        "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-        intent.putExtra("difficulty", difficulty);
-    } else {
-        intent.putExtra("difficulty", difficultySection);
-    }
+    intent.putExtra("difficulty", difficultySection);
                 intent.putExtra("game_type", "OnTimer");
                 intent.putExtra("heartLimit", 3);
                 intent.putExtra("timerLimit", 4);
@@ -206,14 +178,7 @@ if ("Addition".equals(operation)) {
 
                 Intent intent = new Intent(OnTimerLevelSelection.this, MultipleChoicePage.class);
     intent.putExtra("operation", operation);
-    // For percentage and decimal operations, pass the actual grade level
-    if ("Percentage".equals(operation) || "Decimal".equals(operation) || 
-        "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) || 
-        "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-        intent.putExtra("difficulty", difficulty);
-    } else {
-        intent.putExtra("difficulty", "Hard");
-    }
+    intent.putExtra("difficulty", "Hard");
                 intent.putExtra("game_type", "OnTimer");
                 intent.putExtra("heartLimit", 2);
                 intent.putExtra("timerLimit", 2);

@@ -5,6 +5,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import androidx.appcompat.app.AlertDialog;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
@@ -640,9 +641,15 @@ public class QuizzesSection extends AppCompatActivity {
     }
     
     /**
-     * Start CSV quiz - always accessible (no restrictions)
+     * Start CSV quiz - always accessible (no restrictions, no tutorial check)
+     * CSV quizzes are opened by default and should remain accessible
      */
     private void startCSVQuiz(String quizId, String difficulty) {
+        // CSV quizzes are always accessible - preserve default access
+        startCSVQuizInternal(quizId, difficulty);
+    }
+
+    private void startCSVQuizInternal(String quizId, String difficulty) {
         Log.d("QuizAccess", "🎯 Starting CSV quiz: " + quizId + " with difficulty: " + difficulty + " (Always accessible)");
         
         // CSV quizzes are always accessible - no practice or grade checks needed
@@ -723,33 +730,12 @@ public class QuizzesSection extends AppCompatActivity {
         }
         
         // Quiz is active - start it
-        playSound("click.mp3");
-        
-        // Get quiz data (quizId already declared above)
-        String quizTitle = quizDoc.getString("quizTitle");
-        String quizNumber = quizDoc.getString("quizNumber");
-        java.util.List<Map<String, Object>> questions = 
-            (java.util.List<Map<String, Object>>) quizDoc.get("questions");
-        
-        if (questions == null || questions.isEmpty()) {
-            Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
+        // Only show tutorial warning for scheduled quizzes, not the first created quiz (opened by default)
+        if (!isFirstCreatedQuiz && !hasCompletedAnyTutorial()) {
+            showTutorialWarning(() -> startFirebaseQuizInternal(quizDoc));
             return;
         }
-        
-        // Convert Firebase questions to MathProblem list
-        java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
-        
-        // Start quiz with Firebase questions - same structure as CSV quiz
-        Intent intent = new Intent(this, MultipleChoicePage.class);
-        intent.putExtra("quizId", quizId);
-        intent.putExtra("game_type", "Quiz");
-        intent.putExtra("isFirebaseQuiz", true);
-        intent.putExtra("firebaseQuizTitle", quizTitle != null ? quizTitle : "Custom Quiz");
-        intent.putExtra("firebaseQuizNumber", quizNumber != null ? quizNumber : "1");
-        intent.putExtra("timerLimit", 10); // Default timer limit for quizzes (10 minutes)
-        intent.putParcelableArrayListExtra("firebaseQuestions", 
-            new java.util.ArrayList<>(problemSet));
-        startActivity(intent);
+        startFirebaseQuizInternal(quizDoc);
     }
     
     /**
@@ -833,35 +819,68 @@ public class QuizzesSection extends AppCompatActivity {
             startButton.setAlpha(1.0f);
             
             startButton.setOnClickListener(v -> {
-                playSound("click.mp3");
-                
-                // Get quiz data (quizId already declared above)
-                String quizTitle = quizDoc.getString("quizTitle");
-                String quizNumber = quizDoc.getString("quizNumber");
-                java.util.List<Map<String, Object>> questions = 
-                    (java.util.List<Map<String, Object>>) quizDoc.get("questions");
-                
-                if (questions == null || questions.isEmpty()) {
-                    Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                
-                // Convert Firebase questions to MathProblem list
-                java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
-                
-                // Start quiz with Firebase questions - same structure as CSV quiz
-                Intent intent = new Intent(this, MultipleChoicePage.class);
-                intent.putExtra("quizId", quizId);
-                intent.putExtra("game_type", "Quiz");
-                intent.putExtra("isFirebaseQuiz", true);
-                intent.putExtra("firebaseQuizTitle", quizTitle != null ? quizTitle : "Custom Quiz");
-                intent.putExtra("firebaseQuizNumber", quizNumber != null ? quizNumber : "1");
-                intent.putExtra("timerLimit", 10); // Default timer limit for quizzes (10 minutes)
-                intent.putParcelableArrayListExtra("firebaseQuestions", 
-                    new java.util.ArrayList<>(problemSet));
-                startActivity(intent);
+                // startFirebaseQuiz already handles tutorial check and preserves first created quiz
+                startFirebaseQuiz(quizDoc);
             });
         }
+    }
+
+    private void startFirebaseQuizInternal(com.google.firebase.firestore.QueryDocumentSnapshot quizDoc) {
+        playSound("click.mp3");
+
+        // Get quiz data (quizId already declared above)
+        String quizId = quizDoc.getId();
+        String quizTitle = quizDoc.getString("quizTitle");
+        String quizNumber = quizDoc.getString("quizNumber");
+        java.util.List<Map<String, Object>> questions = 
+            (java.util.List<Map<String, Object>>) quizDoc.get("questions");
+
+        if (questions == null || questions.isEmpty()) {
+            Toast.makeText(this, "Quiz has no questions", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Convert Firebase questions to MathProblem list
+        java.util.List<MathProblem> problemSet = convertFirebaseQuestionsToMathProblems(questions);
+
+        // Start quiz with Firebase questions - same structure as CSV quiz
+        Intent intent = new Intent(this, MultipleChoicePage.class);
+        intent.putExtra("quizId", quizId);
+        intent.putExtra("game_type", "Quiz");
+        intent.putExtra("isFirebaseQuiz", true);
+        intent.putExtra("firebaseQuizTitle", quizTitle != null ? quizTitle : "Custom Quiz");
+        intent.putExtra("firebaseQuizNumber", quizNumber != null ? quizNumber : "1");
+        intent.putExtra("timerLimit", 10); // Default timer limit for quizzes (10 minutes)
+        intent.putParcelableArrayListExtra("firebaseQuestions", 
+            new java.util.ArrayList<>(problemSet));
+        startActivity(intent);
+    }
+
+    /**
+     * Show warning dialog when tutorials were not taken yet.
+     */
+    /**
+     * Show warning dialog when tutorials were not taken yet.
+     * Only shown for scheduled Firebase quizzes, NOT for default quizzes (CSV or first created quiz).
+     */
+    private void showTutorialWarning(Runnable onContinue) {
+        new AlertDialog.Builder(this)
+            .setTitle("Warning")
+            .setMessage("The system detected that you didn't take your tutorials yet. Are you sure you wish to continue?")
+            .setNegativeButton("Cancel", (d, which) -> d.dismiss())
+            .setPositiveButton("Continue", (d, which) -> {
+                d.dismiss();
+                onContinue.run();
+            })
+            .setCancelable(true)
+            .show();
+    }
+
+    private boolean hasCompletedAnyTutorial() {
+        com.happym.mathsquare.utils.TutorialProgressTracker tracker =
+            new com.happym.mathsquare.utils.TutorialProgressTracker(this);
+        java.util.Set<String> completed = tracker.getCompletedTutorials();
+        return completed != null && !completed.isEmpty();
     }
     
     /**

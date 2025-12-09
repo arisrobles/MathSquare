@@ -29,19 +29,23 @@
             android:exported="true" />
         <activity
             android:name=".studentSignUp"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".studentLogIn"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".Dashboard"
             android:exported="true" />
         <activity
             android:name=".teacherSignUp"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".teacherLogIn"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".dashboard_StudentsPanel"
             android:exported="true" />
@@ -65,7 +69,8 @@
             android:exported="true" />
         <activity
             android:name=".signInUp"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -92,6 +97,10 @@
             android:name=".PDFViewerActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name=".TutorialSelectionActivity"
+            android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".NumberAnimation"

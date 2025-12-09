@@ -243,15 +243,17 @@ public class QuizManagerActivity extends AppCompatActivity {
         for (MathProblem problem : allCSVQuizzes) {
             String operation = problem.getOperation();
             String difficulty = problem.getDifficulty();
-            
-            // For CSV quizzes, we can filter by operation (which maps to grade/quiz concept)
-            // Since CSV quizzes don't have grade/section, we'll show all and let user see by operation
+            // Apply grade filter by mapping grade -> difficulty (CSV has no section)
+            if (!gradeMatchesCSV(difficulty)) {
+                continue;
+            }
+            // Section filter has no meaning for CSV; always pass
             filteredQuizzes.add(problem);
         }
         
         if (filteredQuizzes.isEmpty()) {
             txtEmptyState.setVisibility(View.VISIBLE);
-            txtEmptyState.setText("No CSV quizzes found.");
+            txtEmptyState.setText("No CSV quizzes found for the selected filters.");
         } else {
             txtEmptyState.setVisibility(View.GONE);
             // Group by operation and difficulty
@@ -269,6 +271,35 @@ public class QuizManagerActivity extends AppCompatActivity {
                 addCSVQuizGroupToUI(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    /**
+     * Map grade filter to CSV difficulty: 1-2 -> Easy, 3-4 -> Medium, 5-6 -> Hard.
+     * If grade filter is "All", allow all.
+     */
+    private boolean gradeMatchesCSV(String difficulty) {
+        if (selectedGradeFilter == null || "All".equalsIgnoreCase(selectedGradeFilter)) {
+            return true;
+        }
+        String targetDifficulty;
+        switch (selectedGradeFilter) {
+            case "1":
+            case "2":
+                targetDifficulty = "Easy";
+                break;
+            case "3":
+            case "4":
+                targetDifficulty = "Medium";
+                break;
+            case "5":
+            case "6":
+                targetDifficulty = "Hard";
+                break;
+            default:
+                targetDifficulty = null;
+        }
+        if (targetDifficulty == null) return true;
+        return targetDifficulty.equalsIgnoreCase(difficulty);
     }
     
     private String extractSectionName(String filterDisplay) {

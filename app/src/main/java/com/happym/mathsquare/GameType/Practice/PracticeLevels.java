@@ -149,21 +149,7 @@ public class PracticeLevels extends AppCompatActivity {
         operationDisplayIcon.setImageResource(R.drawable.btn_operation_add);
     }
 
-         if ("grade_one".equals(difficulty)) {
-   difficultySection = "Easy";
-} else if ("grade_two".equals(difficulty)) {
-    difficultySection = "Easy";
-} else if ("grade_three".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_four".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_five".equals(difficulty)) {
-    difficultySection = "Medium";
-} else if ("grade_six".equals(difficulty)) {
-    difficultySection = "Hard";
-} else {
-    difficultySection = "Easy";
-}
+        difficultySection = (difficulty != null && !difficulty.isEmpty()) ? difficulty : "Easy";
 
         animateButtonFocus(btnEnter);
 
@@ -180,14 +166,7 @@ public class PracticeLevels extends AppCompatActivity {
 // Create intent to start MultipleChoicePage
 Intent intent = new Intent(PracticeLevels.this, MultipleChoicePage.class);
 intent.putExtra("operation", operation);
-// For percentage and decimal operations, pass the actual grade level
-if ("Percentage".equals(operation) || "Decimal".equals(operation) || 
-    "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) || 
-    "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-    intent.putExtra("difficulty", difficulty);
-} else {
 intent.putExtra("difficulty", difficultySection);
-}
 intent.putExtra("game_type", "practice");
 intent.putExtra("heartLimit", heartCount);
 intent.putExtra("timerLimit", timerCount);

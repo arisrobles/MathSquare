@@ -51,6 +51,7 @@ public class PDFViewerActivity extends AppCompatActivity {
 
     private VideoView videoView;
     private boolean isVideoShowing = false;
+    private boolean showVideoAfter = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +62,7 @@ public class PDFViewerActivity extends AppCompatActivity {
         // Get PDF file name from intent
         pdfFileName = getIntent().getStringExtra("PDF_FILE");
         String tutorialName = getIntent().getStringExtra("TUTORIAL_NAME");
+        showVideoAfter = getIntent().getBooleanExtra("SHOW_VIDEO_AFTER", true); // Default true for backwards compatibility
         if (pdfFileName == null) {
             pdfFileName = "addition.pdf";
         }
@@ -197,8 +199,8 @@ public class PDFViewerActivity extends AppCompatActivity {
                 scheduleHideControls();
             }
         } else {
-            // Last page reached - show video for tutorials that have videos
-            if (pdfFileName != null && hasVideo()) {
+            // Last page reached - show video only if showVideoAfter is true
+            if (showVideoAfter && pdfFileName != null && hasVideo()) {
                 showTutorialVideo();
             } else {
                 Toast.makeText(this, "Last page reached", Toast.LENGTH_SHORT).show();

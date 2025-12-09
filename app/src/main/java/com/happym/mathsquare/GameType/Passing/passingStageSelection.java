@@ -120,21 +120,7 @@ public class passingStageSelection extends AppCompatActivity {
         animateButtonFocus(btnNext);
         animateButtonFocus(btnBack);
 
-        if ("grade_one".equals(difficulty)) {
-            difficultySection = "Easy";
-        } else if ("grade_two".equals(difficulty)) {
-            difficultySection = "Easy";
-        } else if ("grade_three".equals(difficulty)) {
-            difficultySection = "Medium";
-        } else if ("grade_four".equals(difficulty)) {
-            difficultySection = "Medium";
-        } else if ("grade_five".equals(difficulty)) {
-            difficultySection = "Medium";
-        } else if ("grade_six".equals(difficulty)) {
-            difficultySection = "Hard";
-        } else {
-            difficultySection = "Easy";
-        }
+        difficultySection = (difficulty != null && !difficulty.isEmpty()) ? difficulty : "Easy";
 
         btnNext.setVisibility(View.GONE);
         btnBack.setVisibility(View.GONE);
@@ -248,14 +234,7 @@ public class passingStageSelection extends AppCompatActivity {
                     intent.putExtra("passing_world", "world_one");
                     intent.putExtra("passing_next_level", nextLevelToUnlock);
                     intent.putExtra("questionLimit", 10);
-                    // For percentage and decimal operations, pass the actual grade level
-                    if ("Percentage".equals(operation) || "Decimal".equals(operation) ||
-                        "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) ||
-                        "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-                        intent.putExtra("difficulty", difficulty);
-                    } else {
-                        intent.putExtra("difficulty", difficultySection);
-                    }
+                    intent.putExtra("difficulty", difficultySection);
 
                     animateButtonClick(level);
                     stopButtonFocusAnimation(level);
@@ -473,14 +452,7 @@ public class passingStageSelection extends AppCompatActivity {
                                         intent.putExtra("passing_world", "world_one");
                                         intent.putExtra("passing_next_level", nextLevelToUnlock);
                                         intent.putExtra("questionLimit", 10);
-                                        // For percentage and decimal operations, pass the actual grade level
-                                        if ("Percentage".equals(operation) || "Decimal".equals(operation) ||
-                                            "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) ||
-                                            "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-                                            intent.putExtra("difficulty", difficulty);
-                                        } else {
-                                            intent.putExtra("difficulty", difficultySection);
-                                        }
+                                        intent.putExtra("difficulty", difficultySection);
                                         animateButtonClick(level);
                                         stopButtonFocusAnimation(level);
                                         startActivity(intent);
@@ -551,14 +523,7 @@ public class passingStageSelection extends AppCompatActivity {
                                 intent.putExtra("passing_world", "world_one");
                                 intent.putExtra("passing_next_level", nextLevelToUnlock);
                                 intent.putExtra("questionLimit", 10);
-                                // For percentage and decimal operations, pass the actual grade level
-                                if ("Percentage".equals(operation) || "Decimal".equals(operation) ||
-                                    "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) ||
-                                    "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-                                    intent.putExtra("difficulty", difficulty);
-                                } else {
                                     intent.putExtra("difficulty", difficultySection);
-                                }
                                 animateButtonClick(level);
                                 stopButtonFocusAnimation(level);
                                 startActivity(intent);
@@ -696,14 +661,7 @@ public class passingStageSelection extends AppCompatActivity {
                                         intent.putExtra("passing_world", "world_one");
                                         intent.putExtra("passing_next_level", nextLevelToUnlock);
                                         intent.putExtra("questionLimit", 10);
-                                        // For percentage and decimal operations, pass the actual grade level
-                                        if ("Percentage".equals(operation) || "Decimal".equals(operation) ||
-                                            "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) ||
-                                            "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-                                            intent.putExtra("difficulty", difficulty);
-                                        } else {
-                                            intent.putExtra("difficulty", difficultySection);
-                                        }
+                                        intent.putExtra("difficulty", difficultySection);
                                         animateButtonClick(level);
                                         stopButtonFocusAnimation(level);
                                         startActivity(intent);

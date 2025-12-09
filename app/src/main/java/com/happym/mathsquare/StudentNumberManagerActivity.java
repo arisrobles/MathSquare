@@ -8,6 +8,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
@@ -28,10 +32,13 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
     
     private FirebaseFirestore db;
     private EditText studentNumberInput;
+    private MaterialAutoCompleteTextView searchInput;
     private Button addButton, saveButton;
     private LinearLayout studentNumbersList;
     private TextView txtSectionInfo, txtStudentCount, txtEmptyState;
     private List<String> studentNumbers;
+    private List<String> filteredNumbers;
+    private ArrayAdapter<String> searchAdapter;
     private String currentSectionId;
     private String currentSectionName;
     private String currentGrade;
@@ -46,6 +53,7 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         
         studentNumberInput = findViewById(R.id.editStudentNumber);
+        searchInput = findViewById(R.id.inputSearchStudentNumber);
         addButton = findViewById(R.id.btnAddStudentNumber);
         saveButton = findViewById(R.id.btnSaveStudentNumbers);
         studentNumbersList = findViewById(R.id.studentNumbersList);
@@ -54,6 +62,25 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
         txtEmptyState = findViewById(R.id.txtEmptyState);
         
         studentNumbers = new ArrayList<>();
+        filteredNumbers = new ArrayList<>();
+        searchAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, new ArrayList<>());
+        if (searchInput != null) {
+            searchInput.setAdapter(searchAdapter);
+            searchInput.setOnItemClickListener((parent, view, position, id) -> {
+                String selected = searchAdapter.getItem(position);
+                applyFilter(selected);
+            });
+            searchInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    applyFilter(s != null ? s.toString() : "");
+                }
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
         
         // Get section info from intent or SharedPreferences
         String sectionNameFromIntent = getIntent().getStringExtra("sectionName");
@@ -303,7 +330,7 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
                     // Student number is unique, add it to the list
                     studentNumbers.add(studentNumber);
                     studentNumberInput.setText("");
-                    updateStudentNumbersList();
+                    applyFilter(getSearchQuery());
                     Toast.makeText(this, "Student number added: " + studentNumber, Toast.LENGTH_SHORT).show();
                     Log.d("StudentNumberManager", "✅ Student number is unique: " + studentNumber);
                 } else {
@@ -312,12 +339,15 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
                     Toast.makeText(this, "Warning: Could not verify uniqueness. Adding anyway.", Toast.LENGTH_SHORT).show();
                     studentNumbers.add(studentNumber);
                     studentNumberInput.setText("");
-                    updateStudentNumbersList();
+                    applyFilter(getSearchQuery());
                 }
             });
     }
     
     private void updateStudentNumbersList() {
+        if (filteredNumbers == null) {
+            filteredNumbers = new ArrayList<>(studentNumbers);
+        }
         studentNumbersList.removeAllViews();
         
         // Update student count
@@ -325,14 +355,22 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
             txtStudentCount.setText("(" + studentNumbers.size() + ")");
         }
         
-        // Show/hide empty state
+        // Show/hide empty state (handles no data or no matches)
         if (txtEmptyState != null) {
-            txtEmptyState.setVisibility(studentNumbers.isEmpty() ? View.VISIBLE : View.GONE);
+            boolean noData = studentNumbers.isEmpty();
+            boolean noMatches = filteredNumbers.isEmpty() && !studentNumbers.isEmpty();
+            if (noMatches) {
+                txtEmptyState.setText("No matching student numbers. Try a different search.");
+                txtEmptyState.setVisibility(View.VISIBLE);
+            } else {
+                txtEmptyState.setText("No student numbers added yet.\nAdd your first student number above! 👆");
+                txtEmptyState.setVisibility(noData ? View.VISIBLE : View.GONE);
+            }
         }
         
-        // Add student number items
-        for (int i = 0; i < studentNumbers.size(); i++) {
-            String number = studentNumbers.get(i);
+        // Add student number items based on filtered list
+        for (int i = 0; i < filteredNumbers.size(); i++) {
+            String number = filteredNumbers.get(i);
             View itemView = getLayoutInflater().inflate(R.layout.item_student_number, 
                 studentNumbersList, false);
             
@@ -340,14 +378,41 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
             Button removeButton = itemView.findViewById(R.id.btnRemoveStudentNumber);
             
             numberText.setText("Student #" + number);
-            final int index = i;
             removeButton.setOnClickListener(v -> {
-                studentNumbers.remove(index);
-                updateStudentNumbersList();
+                studentNumbers.remove(number);
+                applyFilter(searchInput != null ? searchInput.getText().toString() : "");
             });
             
             studentNumbersList.addView(itemView);
         }
+    }
+
+    private void applyFilter(String query) {
+        if (filteredNumbers == null) {
+            filteredNumbers = new ArrayList<>();
+        }
+        filteredNumbers.clear();
+        String trimmed = query != null ? query.trim().toLowerCase() : "";
+        if (trimmed.isEmpty()) {
+            filteredNumbers.addAll(studentNumbers);
+        } else {
+            for (String num : studentNumbers) {
+                if (num != null && num.toLowerCase().contains(trimmed)) {
+                    filteredNumbers.add(num);
+                }
+            }
+        }
+        // Update dropdown suggestions
+        if (searchAdapter != null) {
+            searchAdapter.clear();
+            searchAdapter.addAll(studentNumbers);
+            searchAdapter.notifyDataSetChanged();
+        }
+        updateStudentNumbersList();
+    }
+
+    private String getSearchQuery() {
+        return searchInput != null ? searchInput.getText().toString() : "";
     }
     
     /**
@@ -457,7 +522,7 @@ public class StudentNumberManagerActivity extends AppCompatActivity {
                         }
                     }
                     Log.d("StudentNumberManager", "✅ Successfully loaded " + count + " student numbers (out of " + totalDocs + " documents)");
-                    updateStudentNumbersList();
+                    applyFilter(getSearchQuery());
                 } else {
                     Log.e("StudentNumberManager", "❌ Error loading student numbers", task.getException());
                     Log.e("StudentNumberManager", "  - Section ID: " + currentSectionId);

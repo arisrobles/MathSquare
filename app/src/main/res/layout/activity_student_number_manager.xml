@@ -184,6 +184,33 @@
                         android:background="#E0E0E0"
                         android:layout_marginBottom="16dp" />
 
+                    <!-- Search / dropdown -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="Search or select student number"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxStrokeColor="#5DB575"
+                        app:hintTextColor="#5DB575"
+                        app:boxBackgroundColor="#F5F5F5"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputSearchStudentNumber"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:fontFamily="@font/paytone_one"
+                            android:textColor="#204520"
+                            android:textSize="16sp"
+                            android:padding="12dp"
+                            android:completionThreshold="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <ScrollView
                         android:layout_width="match_parent"
                         android:layout_height="0dp"

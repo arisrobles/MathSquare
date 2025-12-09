@@ -77,88 +77,29 @@ public class Difficulty extends AppCompatActivity {
         String operation = getIntent().getStringExtra("operation");
 
         // difficulty buttons
-        int btnEasyOneId = R.id.btn_easy; //Grade one
-        int btnEasyTwoId = R.id.btn_easy_two; //Grade two
-        int btnEasyThreeId = R.id.btn_easy_three; //Grade three
-        int btnMediumId = R.id.btn_medium; //Grade four
-        int btnHardId = R.id.btn_hard; //Grade five
-        int btnSuperHardId = R.id.btn_superhard; //Grade six
-        int btnNextId = R.id.btn_next;
-        int btnBackId = R.id.btn_back;
+        Button btnEasy = findViewById(R.id.btn_easy);
+        Button btnMedium = findViewById(R.id.btn_medium);
+        Button btnHard = findViewById(R.id.btn_hard);
 
-        Button btnEasy = findViewById(btnEasyOneId);
-        Button btnEasyTwo = findViewById(btnEasyTwoId);
-        Button btnEasyThree = findViewById(btnEasyThreeId);
-        Button btnMedium = findViewById(btnMediumId);
-        Button btnHard = findViewById(btnHardId);
-        Button btnSuperHard = findViewById(btnSuperHardId);
-        Button btnNext = findViewById(btnNextId);
-        Button btnBack = findViewById(btnBackId);
-        
-        LinearLayout difficulty_one = findViewById(R.id.difficulty_one);
-        LinearLayout difficulty_two = findViewById(R.id.difficulty_two);
-        
         animateButtonFocus(btnEasy);
-        animateButtonFocus(btnEasyTwo);
-        animateButtonFocus(btnEasyThree);
         animateButtonFocus(btnMedium);
         animateButtonFocus(btnHard);
-        animateButtonFocus(btnSuperHard);
-        animateButtonFocus(btnNext);
-        animateButtonFocus(btnBack);
-        
-        
-        btnNext.setOnClickListener(v -> {
-                
-                animateButtonClick(btnNext);
-        stopButtonFocusAnimation(btnNext);
-               playSound("click.mp3");
-            difficulty_one.setVisibility(View.GONE);
-                difficulty_two.setVisibility(View.VISIBLE);
-        });
-        
-        btnBack.setOnClickListener(v -> {
-                
-                animateButtonClick(btnBack);
-        stopButtonFocusAnimation(btnBack);
-               playSound("click.mp3");
-            difficulty_one.setVisibility(View.VISIBLE);
-                difficulty_two.setVisibility(View.GONE);
-        });
 
         btnEasy.setOnClickListener(v -> {
                 animateButtonClick(btnEasy);
                 
                 Intent intent = new Intent(Difficulty.this, MathOperations.class);
-                intent.putExtra("difficulty", "grade_one");
+                intent.putExtra("difficulty", "Easy");
                 playSound("click.mp3");
                 startActivity(intent);
                 
                 });
-       
-btnEasyTwo.setOnClickListener(v -> {
-    animateButtonClick(btnEasyTwo);
-
-    Intent intent = new Intent(Difficulty.this, MathOperations.class);
-    intent.putExtra("difficulty", "grade_two");
-    playSound("click.mp3");
-    startActivity(intent);
-});
-
-btnEasyThree.setOnClickListener(v -> {
-    animateButtonClick(btnEasyThree);
-
-    Intent intent = new Intent(Difficulty.this, MathOperations.class);
-    intent.putExtra("difficulty", "grade_three");
-    playSound("click.mp3");
-    startActivity(intent);
-});
 
 btnMedium.setOnClickListener(v -> {
     animateButtonClick(btnMedium);
 
     Intent intent = new Intent(Difficulty.this, MathOperations.class);
-    intent.putExtra("difficulty", "grade_four");
+    intent.putExtra("difficulty", "Medium");
     playSound("click.mp3");
     startActivity(intent);
 });
@@ -167,16 +108,7 @@ btnHard.setOnClickListener(v -> {
     animateButtonClick(btnHard);
 
     Intent intent = new Intent(Difficulty.this, MathOperations.class);
-    intent.putExtra("difficulty", "grade_five");
-    playSound("click.mp3");
-    startActivity(intent);
-});
-
-btnSuperHard.setOnClickListener(v -> {
-    animateButtonClick(btnSuperHard);
-
-    Intent intent = new Intent(Difficulty.this, MathOperations.class);
-    intent.putExtra("difficulty", "grade_six");
+    intent.putExtra("difficulty", "Hard");
     playSound("click.mp3");
     startActivity(intent);
 });

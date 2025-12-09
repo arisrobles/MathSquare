@@ -128,13 +128,13 @@ public class WebViewActivity extends AppCompatActivity {
     webView = findViewById(R.id.webView);
 setupWebView();
 
-        // Button click listeners to open PDF tutorials with progression check
-        tutaddition.setOnClickListener(v -> checkAndOpenTutorial("addition.pdf", "addition"));
-        tutmultiplication.setOnClickListener(v -> checkAndOpenTutorial("multiplication.pdf", "multiplication"));
-        tutdivision.setOnClickListener(v -> checkAndOpenTutorial("division.pdf", "division"));
-        tutsubtraction.setOnClickListener(v -> checkAndOpenTutorial("subtraction.pdf", "subtraction"));
-        tutdecimals.setOnClickListener(v -> checkAndOpenTutorial("decimals.pdf", "decimals"));
-        tutpercentage.setOnClickListener(v -> checkAndOpenTutorial("percentage.pdf", "percentage"));
+        // Button click listeners to open tutorial selection screen
+        tutaddition.setOnClickListener(v -> openTutorialSelection("addition"));
+        tutmultiplication.setOnClickListener(v -> openTutorialSelection("multiplication"));
+        tutdivision.setOnClickListener(v -> openTutorialSelection("division"));
+        tutsubtraction.setOnClickListener(v -> openTutorialSelection("subtraction"));
+        tutdecimals.setOnClickListener(v -> openTutorialSelection("decimals"));
+        tutpercentage.setOnClickListener(v -> openTutorialSelection("percentage"));
         
         // Filter tutorials based on grade level
         filterTutorialsByGrade();
@@ -166,7 +166,23 @@ setupWebView();
         MusicManager.pause();
     }
 
-    // Method to open PDF tutorial with progression check (grade-specific)
+    // Method to open tutorial selection screen
+    private void openTutorialSelection(String tutorialName) {
+        // Check grade level access first
+        String grade = sharedPreferences.getGrade(this);
+        if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
+            Toast.makeText(this, 
+                "This tutorial is not available for your grade level", 
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        Intent intent = new Intent(this, TutorialSelectionActivity.class);
+        intent.putExtra("TUTORIAL_NAME", tutorialName);
+        startActivity(intent);
+    }
+    
+    // Method to open PDF tutorial with progression check (grade-specific) - kept for backwards compatibility
     private void checkAndOpenTutorial(String pdfFileName, String tutorialName) {
         TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         

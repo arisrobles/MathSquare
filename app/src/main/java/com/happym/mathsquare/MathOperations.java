@@ -61,6 +61,7 @@ import java.util.Random;
 
 import com.happym.mathsquare.Animation.*;
 import com.happym.mathsquare.utils.GradeRestrictionUtil;
+import com.happym.mathsquare.sharedPreferences;
 
 public class MathOperations extends AppCompatActivity {
     private MediaPlayer soundEffectPlayer;
@@ -74,8 +75,9 @@ public class MathOperations extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mathoperations);
 
-        // Get difficulty from intent
+        // Get difficulty from intent (Easy/Medium/Hard) and student grade from profile
         String difficulty = getIntent().getStringExtra("difficulty");
+        String studentGrade = sharedPreferences.getGrade(this);
 
         // operations buttons
         int btnOperationAdd = R.id.btn_operation_add;
@@ -100,50 +102,34 @@ public class MathOperations extends AppCompatActivity {
         TextView labelDecimal = findViewById(R.id.label_operation_decimal);
         TextView labelPercentage = findViewById(R.id.label_operation_percentage);
 
-        // Show/hide operations based on grade level
-        Log.d("MATH_OPERATIONS", "Setting visibility for difficulty: " + difficulty);
+        // Show/hide operations based on the student's grade (not the selected difficulty)
+        Log.d("MATH_OPERATIONS", "Setting visibility for student grade: " + studentGrade);
 
-        if ("grade_one".equals(difficulty) || "grade_two".equals(difficulty)) {
-            // For grades 1-2: only show addition and subtraction
-            Log.d("MATH_OPERATIONS", "Grade 1-2: Hiding multiplication, division, decimal, percentage");
-            btnMultiply.setVisibility(View.GONE);
-            btnDivide.setVisibility(View.GONE);
-            btnDecimal.setVisibility(View.GONE);
-            btnPercentage.setVisibility(View.GONE);
-            // Hide corresponding labels
-            labelMultiply.setVisibility(View.GONE);
-            labelDivide.setVisibility(View.GONE);
-            labelDecimal.setVisibility(View.GONE);
-            labelPercentage.setVisibility(View.GONE);
-        } else if ("grade_three".equals(difficulty) || "grade_four".equals(difficulty)) {
-            // For grades 3-4: show all basic operations but hide decimal and percentage
-            Log.d("MATH_OPERATIONS", "Grade 3-4: Showing basic operations, hiding decimal and percentage");
-            btnMultiply.setVisibility(View.VISIBLE);
-            btnDivide.setVisibility(View.VISIBLE);
-            btnDecimal.setVisibility(View.GONE);
-            btnPercentage.setVisibility(View.GONE);
-            // Show/hide corresponding labels
-            labelMultiply.setVisibility(View.VISIBLE);
-            labelDivide.setVisibility(View.VISIBLE);
-            labelDecimal.setVisibility(View.GONE);
-            labelPercentage.setVisibility(View.GONE);
+        boolean canMultiply = GradeRestrictionUtil.isOperationAllowedForGrade(studentGrade, "Multiplication");
+        boolean canDivide = GradeRestrictionUtil.isOperationAllowedForGrade(studentGrade, "Division");
+        boolean canDecimal = GradeRestrictionUtil.isOperationAllowedForGrade(studentGrade, "Decimal");
+        boolean canPercentage = GradeRestrictionUtil.isOperationAllowedForGrade(studentGrade, "Percentage");
+
+        btnMultiply.setVisibility(canMultiply ? View.VISIBLE : View.GONE);
+        btnDivide.setVisibility(canDivide ? View.VISIBLE : View.GONE);
+        btnDecimal.setVisibility(canDecimal ? View.VISIBLE : View.GONE);
+        btnPercentage.setVisibility(canPercentage ? View.VISIBLE : View.GONE);
+
+        labelMultiply.setVisibility(canMultiply ? View.VISIBLE : View.GONE);
+        labelDivide.setVisibility(canDivide ? View.VISIBLE : View.GONE);
+        labelDecimal.setVisibility(canDecimal ? View.VISIBLE : View.GONE);
+        labelPercentage.setVisibility(canPercentage ? View.VISIBLE : View.GONE);
+
+        if (canMultiply) {
             animateButtonFocus(btnMultiply);
+        }
+        if (canDivide) {
             animateButtonFocus(btnDivide);
-        } else {
-            // For grades 5-6: show all operations
-            Log.d("MATH_OPERATIONS", "Grade 5-6: Showing all operations");
-            btnMultiply.setVisibility(View.VISIBLE);
-            btnDivide.setVisibility(View.VISIBLE);
-            btnDecimal.setVisibility(View.VISIBLE);
-            btnPercentage.setVisibility(View.VISIBLE);
-            // Show all labels
-            labelMultiply.setVisibility(View.VISIBLE);
-            labelDivide.setVisibility(View.VISIBLE);
-            labelDecimal.setVisibility(View.VISIBLE);
-            labelPercentage.setVisibility(View.VISIBLE);
-            animateButtonFocus(btnMultiply);
-            animateButtonFocus(btnDivide);
+        }
+        if (canDecimal) {
             animateButtonFocus(btnDecimal);
+        }
+        if (canPercentage) {
             animateButtonFocus(btnPercentage);
         }
 

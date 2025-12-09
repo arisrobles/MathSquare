@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:background="@color/yellowbg"
+     android:id="@+id/main">
+
+    <FrameLayout
+         android:layout_height="match_parent"
+         android:layout_width="match_parent"
+         android:id="@+id/number_container">
+
+    </FrameLayout>
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:gravity="top|center"
+         android:orientation="vertical"
+         android:layout_marginTop="20dp">
+
+        <LinearLayout
+             android:layout_height="80dp"
+             android:layout_width="match_parent"
+             android:gravity="center"
+             android:background="@drawable/btn_long_condition"
+             android:orientation="vertical"
+             android:layout_marginLeft="25dp"
+             android:layout_marginRight="25dp"
+             android:layout_marginTop="20dp">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:gravity="center_horizontal"
+                 android:layout_marginHorizontal="20dp"
+                 android:shadowRadius="4"
+                 android:textSize="23sp"
+                 android:fontFamily="@font/paytone_one"
+                 android:textColor="@color/white"
+                 android:shadowColor="#000000"
+                 android:shadowDx="2"
+                 android:shadowDy="2"
+                 android:id="@+id/tutorial_title"
+                 android:text="Tutorial" />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:gravity="center_horizontal"
+             android:orientation="vertical"
+             android:layout_marginTop="40dp"
+             android:id="@+id/button_container">
+
+        </LinearLayout>
+
+        <TextView
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:gravity="center_horizontal"
+             android:layout_marginTop="20dp"
+             android:layout_marginHorizontal="25dp"
+             android:textSize="14sp"
+             android:fontFamily="@font/paytone_one"
+             android:textColor="@color/white"
+             android:id="@+id/video_credits"
+             android:visibility="gone"
+             android:text="Video credits to respective owners" />
+
+    </LinearLayout>
+
+</FrameLayout>
+

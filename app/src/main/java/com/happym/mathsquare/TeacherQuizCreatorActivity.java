@@ -281,7 +281,7 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
             String[] grades = {assignedGrade};
             android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
                 this, R.layout.spinner_item, grades);
-            gradeAdapter.setDropDownViewResource(R.layout.spinner_item);
+            gradeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
             gradeSpinner.setAdapter(gradeAdapter);
             gradeSpinner.setSelection(0); // Auto-select the assigned grade
             gradeSpinner.setEnabled(false); // Disable spinner - teacher can't change it
@@ -292,7 +292,7 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
             String[] grades = {"1", "2", "3", "4", "5", "6"};
             android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
                 this, R.layout.spinner_item, grades);
-            gradeAdapter.setDropDownViewResource(R.layout.spinner_item);
+            gradeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
             gradeSpinner.setAdapter(gradeAdapter);
         }
         
@@ -345,7 +345,7 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                         
                         android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
                             this, R.layout.spinner_item, sectionDisplayList);
-                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                         sectionSpinner.setAdapter(sectionAdapter);
                         sectionSpinner.setSelection(0); // Auto-select the assigned section
                         sectionSpinner.setEnabled(false); // Disable spinner - teacher can't change it
@@ -361,7 +361,7 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                         
                         android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
                             this, R.layout.spinner_item, sectionDisplayList);
-                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                         sectionSpinner.setAdapter(sectionAdapter);
                         sectionSpinner.setSelection(0);
                         sectionSpinner.setEnabled(false);
@@ -393,7 +393,7 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
                         
                         android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
                             this, R.layout.spinner_item, sectionDisplayList);
-                        sectionAdapter.setDropDownViewResource(R.layout.spinner_item);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                         sectionSpinner.setAdapter(sectionAdapter);
                     }
                 });
@@ -485,14 +485,14 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
         String[] operations = {"Addition", "Subtraction", "Multiplication", "Division", "Decimal", "Percentage"};
         android.widget.ArrayAdapter<String> operationAdapter = new android.widget.ArrayAdapter<>(
             this, R.layout.spinner_item, operations);
-        operationAdapter.setDropDownViewResource(R.layout.spinner_item);
+        operationAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         operationSpinner.setAdapter(operationAdapter);
         
         // Difficulty spinner
         String[] difficulties = {"Easy", "Medium", "Hard"};
         android.widget.ArrayAdapter<String> difficultyAdapter = new android.widget.ArrayAdapter<>(
             this, R.layout.spinner_item, difficulties);
-        difficultyAdapter.setDropDownViewResource(R.layout.spinner_item);
+        difficultyAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         difficultySpinner.setAdapter(difficultyAdapter);
     }
     

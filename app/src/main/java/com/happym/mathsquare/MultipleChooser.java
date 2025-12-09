@@ -85,7 +85,7 @@ public class MultipleChooser extends AppCompatActivity {
         setContentView(R.layout.layout_multiple_chooser);
         
         String operation = getIntent().getStringExtra("operation");
-String gradeLevel = getIntent().getStringExtra("difficulty");
+String difficulty = getIntent().getStringExtra("difficulty");
 
 ImageView operationDisplayIcon = findViewById(R.id.difficultyImage);
 
@@ -114,21 +114,7 @@ if ("Addition".equals(operation)) {
     operationDisplayIcon.setImageResource(R.drawable.btn_operation_add);
 }
         
-        if ("grade_one".equals(gradeLevel)) {
-   difficultySection = "Easy";
-} else if ("grade_two".equals(gradeLevel)) {
-    difficultySection = "Easy";
-} else if ("grade_three".equals(gradeLevel)) {
-    difficultySection = "Medium";
-} else if ("grade_four".equals(gradeLevel)) {
-    difficultySection = "Medium";
-} else if ("grade_five".equals(gradeLevel)) {
-    difficultySection = "Medium";
-} else if ("grade_six".equals(gradeLevel)) {
-    difficultySection = "Hard";
-} else {
-    difficultySection = "Easy";
-}
+        difficultySection = (difficulty != null && !difficulty.isEmpty()) ? difficulty : "Easy";
 
         TextView operationDisplay = findViewById(R.id.selectedDifficulty);
         LinearLayout practicebtn = findViewById(R.id.btn_practice);
@@ -142,7 +128,7 @@ if ("Addition".equals(operation)) {
         practicebtn.setOnClickListener(v -> {
             Intent intent = new Intent(MultipleChooser.this, PracticeLevels.class);
                 intent.putExtra("operation", operation);
-    intent.putExtra("difficulty", gradeLevel);
+    intent.putExtra("difficulty", difficultySection);
                 playSound("click.mp3");
                 animateButtonClick(practicebtn);
         stopButtonFocusAnimation(practicebtn);
@@ -152,7 +138,7 @@ if ("Addition".equals(operation)) {
         passingBtn.setOnClickListener(v -> {
             Intent intent = new Intent(MultipleChooser.this, passingStageSelection.class);
                 intent.putExtra("operation", operation);
-    intent.putExtra("difficulty", gradeLevel);
+    intent.putExtra("difficulty", difficultySection);
                 playSound("click.mp3");
                animateButtonClick(passingBtn);
         stopButtonFocusAnimation(passingBtn);
@@ -162,14 +148,7 @@ if ("Addition".equals(operation)) {
         ontimerBtn.setOnClickListener(v -> {
             Intent intent = new Intent(MultipleChooser.this, OnTimerSettings.class);
     intent.putExtra("operation", operation);
-            // For percentage and decimal operations, pass the actual grade level
-            if ("Percentage".equals(operation) || "Decimal".equals(operation) || 
-                "DecimalAddition".equals(operation) || "DecimalSubtraction".equals(operation) || 
-                "DecimalMultiplication".equals(operation) || "DecimalDivision".equals(operation)) {
-                intent.putExtra("difficulty", gradeLevel);
-            } else {
-                intent.putExtra("difficulty", difficultySection);
-            }
+            intent.putExtra("difficulty", difficultySection);
                 playSound("click.mp3");
                 animateButtonClick(ontimerBtn);
         stopButtonFocusAnimation(ontimerBtn);

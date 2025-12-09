@@ -111,7 +111,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/paytone_one"
-                        android:popupBackground="@color/white" />
+                        android:popupBackground="#E8F5E9" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -128,7 +128,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/paytone_one"
-                        android:popupBackground="@color/white" />
+                        android:popupBackground="#E8F5E9" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -253,7 +253,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/paytone_one"
-                        android:popupBackground="@color/white" />
+                        android:popupBackground="#E8F5E9" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -270,7 +270,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/paytone_one"
-                        android:popupBackground="@color/white" />
+                        android:popupBackground="#E8F5E9" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 

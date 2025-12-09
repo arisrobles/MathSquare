@@ -8,5 +8,6 @@
     android:fontFamily="@font/paytone_one"
     android:textColor="#204520"
     android:background="#E8F5E9"
-    android:minHeight="48dp"
+    android:minHeight="56dp"
     android:gravity="center_vertical" />
+

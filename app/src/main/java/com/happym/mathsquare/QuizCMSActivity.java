@@ -74,22 +74,22 @@ public class QuizCMSActivity extends AppCompatActivity {
         // Operation spinner
         String[] operations = {"Addition", "Subtraction", "Multiplication", "Division", "Decimal", "Percentage"};
         android.widget.ArrayAdapter<String> operationAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, operations);
-        operationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            this, R.layout.spinner_item, operations);
+        operationAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         operationSpinner.setAdapter(operationAdapter);
         
         // Difficulty spinner
         String[] difficulties = {"Easy", "Medium", "Hard"};
         android.widget.ArrayAdapter<String> difficultyAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, difficulties);
-        difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            this, R.layout.spinner_item, difficulties);
+        difficultyAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         difficultySpinner.setAdapter(difficultyAdapter);
         
         // Grade spinner
         String[] grades = {"1", "2", "3", "4", "5", "6"};
         android.widget.ArrayAdapter<String> gradeAdapter = new android.widget.ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, grades);
-        gradeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            this, R.layout.spinner_item, grades);
+        gradeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         gradeSpinner.setAdapter(gradeAdapter);
         
         // Section spinner will be populated dynamically after loading sections
@@ -117,10 +117,10 @@ public class QuizCMSActivity extends AppCompatActivity {
                         }
                     }
                     
-                    android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
-                        this, android.R.layout.simple_spinner_item, sectionDisplayList);
-                    sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    sectionSpinner.setAdapter(sectionAdapter);
+                        android.widget.ArrayAdapter<String> sectionAdapter = new android.widget.ArrayAdapter<>(
+                            this, R.layout.spinner_item, sectionDisplayList);
+                        sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                        sectionSpinner.setAdapter(sectionAdapter);
                 } else {
                     Toast.makeText(this, "Error loading sections", Toast.LENGTH_SHORT).show();
                 }

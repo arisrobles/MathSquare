@@ -379,12 +379,25 @@ public class PDFViewerActivity extends AppCompatActivity {
 
             // Start video automatically
             videoView.setOnPreparedListener(mp -> {
+                // Pause app music when video starts
+                MusicManager.pause();
                 videoView.start();
+            });
+            
+            // Handle video playback state changes
+            videoView.setOnInfoListener((mp, what, extra) -> {
+                if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                    // Video started playing - ensure music is paused
+                    MusicManager.pause();
+                }
+                return false;
             });
 
             // Handle video completion
             videoView.setOnCompletionListener(mp -> {
                 Toast.makeText(this, "Video completed", Toast.LENGTH_SHORT).show();
+                // Keep music paused while video is showing
+                MusicManager.pause();
             });
 
             // Update page info
@@ -432,11 +445,24 @@ public class PDFViewerActivity extends AppCompatActivity {
 
             // Start video automatically
             videoView.setOnPreparedListener(mp -> {
+                // Pause app music when video starts
+                MusicManager.pause();
                 videoView.start();
+            });
+            
+            // Handle video playback state changes
+            videoView.setOnInfoListener((mp, what, extra) -> {
+                if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                    // Video started playing - ensure music is paused
+                    MusicManager.pause();
+                }
+                return false;
             });
 
             // Handle video completion - play next decimal video
             videoView.setOnCompletionListener(mp -> {
+                // Keep music paused
+                MusicManager.pause();
                 currentDecimalVideoIndex++;
                 if (currentDecimalVideoIndex < decimalVideos.length) {
                     Toast.makeText(this, "Playing next decimal video...", Toast.LENGTH_SHORT).show();

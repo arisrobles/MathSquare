@@ -3,7 +3,6 @@ package com.happym.mathsquare;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -90,24 +89,15 @@ public class TutorialSelectionActivity extends AppCompatActivity {
         LinearLayout buttonContainer = findViewById(R.id.button_container);
         buttonContainer.removeAllViews();
         
-        // Grade 1-2: Video only (no slides)
-        if (gradeNum <= 2) {
-            AppCompatButton videoBtn = createButton("Watch Video", () -> openYouTubeVideo(getYouTubeVideoUrl()));
-            buttonContainer.addView(videoBtn);
-        } 
-        // Grade 3-6: Additional Video first, then Slides, then Step-by-Step Video
-        else {
-            // Additional Video button (first)
-            AppCompatButton additionalVideoBtn = createButton("Additional Video", () -> openYouTubeVideo(getYouTubeVideoUrl()));
-            buttonContainer.addView(additionalVideoBtn);
+        // Always show two buttons: Videos and Slides
+        // Videos button - opens VideoPlayerActivity with all videos
+        AppCompatButton videosBtn = createButton("Videos", () -> openVideos());
+        buttonContainer.addView(videosBtn);
             
-            // Slides button
-            AppCompatButton slidesBtn = createButton("View Slides", () -> openPDFTutorial());
+        // Slides button - opens PDF tutorial (only for grade 3-6)
+        if (gradeNum > 2) {
+            AppCompatButton slidesBtn = createButton("Slides", () -> openPDFTutorial());
             buttonContainer.addView(slidesBtn);
-            
-            // Step-by-Step Video button (last)
-            AppCompatButton stepByStepBtn = createButton("Step-by-Step Video", () -> openStepByStepVideo());
-            buttonContainer.addView(stepByStepBtn);
         }
         
         // Add credits text
@@ -116,6 +106,13 @@ public class TutorialSelectionActivity extends AppCompatActivity {
             creditsText.setText(VIDEO_CREDITS);
             creditsText.setVisibility(View.VISIBLE);
         }
+    }
+    
+    private void openVideos() {
+        // Open VideoPlayerActivity which displays all videos in-app using iframe
+        Intent intent = new Intent(this, VideoPlayerActivity.class);
+        intent.putExtra("TUTORIAL_NAME", tutorialName);
+        startActivity(intent);
     }
     
     private AppCompatButton createButton(String text, Runnable onClick) {
@@ -170,23 +167,6 @@ public class TutorialSelectionActivity extends AppCompatActivity {
         return null;
     }
     
-    private void openYouTubeVideo(String url) {
-        if (url == null) {
-            Toast.makeText(this, "Video not available for this tutorial", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        // Additional videos are always accessible (no progression check)
-        // This allows students to watch additional videos first as requested
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        intent.setPackage("com.google.android.youtube");
-        if (intent.resolveActivity(getPackageManager()) == null) {
-            // Fallback to browser if YouTube app not installed
-            intent.setPackage(null);
-        }
-        startActivity(intent);
-    }
-    
     private void openPDFTutorial() {
         TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         
@@ -217,44 +197,7 @@ public class TutorialSelectionActivity extends AppCompatActivity {
         Intent intent = new Intent(this, PDFViewerActivity.class);
         intent.putExtra("PDF_FILE", pdfFileName);
         intent.putExtra("TUTORIAL_NAME", tutorialName);
-        intent.putExtra("SHOW_VIDEO_AFTER", false); // Don't show video after slides
-        startActivity(intent);
-        
-        tracker.markTutorialCompleted(tutorialName);
-    }
-    
-    private void openStepByStepVideo() {
-        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
-        
-        // Check grade level access
-        if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
-            Toast.makeText(this, 
-                "This tutorial is not available for your grade level", 
-                Toast.LENGTH_LONG).show();
-            return;
-        }
-        
-        // Check if tutorial is accessible
-        if (!tracker.canAccessTutorial(tutorialName)) {
-            String previousTut = tracker.getPreviousTutorial(tutorialName);
-            if (!previousTut.isEmpty()) {
-                Toast.makeText(this, 
-                    "Please complete the " + previousTut + " tutorial first!", 
-                    Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, 
-                    "Please complete the previous tutorial in your grade's sequence first!", 
-                    Toast.LENGTH_LONG).show();
-            }
-            return;
-        }
-        
-        // Open PDF which will show step-by-step video at the end
-        String pdfFileName = tutorialName.toLowerCase() + ".pdf";
-        Intent intent = new Intent(this, PDFViewerActivity.class);
-        intent.putExtra("PDF_FILE", pdfFileName);
-        intent.putExtra("TUTORIAL_NAME", tutorialName);
-        intent.putExtra("SHOW_VIDEO_AFTER", true); // Show video after slides
+        intent.putExtra("SHOW_VIDEO_AFTER", false); // Don't show video after slides - it's available in Videos section
         startActivity(intent);
         
         tracker.markTutorialCompleted(tutorialName);

@@ -256,7 +256,19 @@ public class QuizManagerActivity extends AppCompatActivity {
             txtEmptyState.setText("No CSV quizzes found for the selected filters.");
         } else {
             txtEmptyState.setVisibility(View.GONE);
-            // Group by operation and difficulty
+            
+            // Show summary
+            TextView summaryText = new TextView(this);
+            summaryText.setText("Total CSV Questions: " + filteredQuizzes.size() + 
+                " (Filtered from " + allCSVQuizzes.size() + " total)");
+            summaryText.setTextSize(14);
+            summaryText.setTypeface(summaryText.getTypeface(), android.graphics.Typeface.BOLD);
+            summaryText.setTextColor(0xFF5DB575);
+            summaryText.setPadding(16, 16, 16, 8);
+            summaryText.setBackgroundColor(0xFFE8F5E9);
+            quizzesListLayout.addView(summaryText);
+            
+            // Group by operation and difficulty for better organization
             Map<String, List<MathProblem>> grouped = new HashMap<>();
             for (MathProblem problem : filteredQuizzes) {
                 String key = problem.getOperation() + " - " + problem.getDifficulty();
@@ -266,7 +278,7 @@ public class QuizManagerActivity extends AppCompatActivity {
                 grouped.get(key).add(problem);
             }
             
-            // Display grouped quizzes
+            // Display ALL grouped quizzes (no preview limit)
             for (Map.Entry<String, List<MathProblem>> entry : grouped.entrySet()) {
                 addCSVQuizGroupToUI(entry.getKey(), entry.getValue());
             }
@@ -362,26 +374,16 @@ public class QuizManagerActivity extends AppCompatActivity {
         // Add group header
         TextView groupHeader = new TextView(this);
         groupHeader.setText(groupKey + " (" + problems.size() + " questions)");
-        groupHeader.setTextSize(16);
+        groupHeader.setTextSize(18);
         groupHeader.setTypeface(groupHeader.getTypeface(), android.graphics.Typeface.BOLD);
         groupHeader.setTextColor(0xFF5DB575);
-        groupHeader.setPadding(16, 16, 16, 8);
+        groupHeader.setPadding(16, 20, 16, 12);
+        groupHeader.setBackgroundColor(0xFFF5F5F5);
         quizzesListLayout.addView(groupHeader);
         
-        // Add first 5 questions as preview (to avoid too many items)
-        int previewCount = Math.min(5, problems.size());
-        for (int i = 0; i < previewCount; i++) {
-            MathProblem problem = problems.get(i);
+        // Show ALL questions (not just preview)
+        for (MathProblem problem : problems) {
             addCSVQuizToUI(problem);
-        }
-        
-        if (problems.size() > previewCount) {
-            TextView moreText = new TextView(this);
-            moreText.setText("... and " + (problems.size() - previewCount) + " more questions");
-            moreText.setTextSize(12);
-            moreText.setTextColor(0xFF888888);
-            moreText.setPadding(16, 4, 16, 16);
-            quizzesListLayout.addView(moreText);
         }
     }
     
@@ -401,12 +403,17 @@ public class QuizManagerActivity extends AppCompatActivity {
         deleteButton.setVisibility(View.GONE);
         
         questionText.setText(problem.getQuestion());
-        detailsText.setText("Operation: " + problem.getOperation() + 
+        detailsText.setText("Operation: " + capitalizeFirst(problem.getOperation()) + 
             " | Difficulty: " + problem.getDifficulty() + 
             " | Answer: " + problem.getAnswer() + 
             " | Source: CSV File");
         
         quizzesListLayout.addView(quizView);
+    }
+    
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
     
     private String getOperationSymbol(String operation) {

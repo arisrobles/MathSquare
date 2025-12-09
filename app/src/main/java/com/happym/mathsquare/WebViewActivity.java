@@ -91,6 +91,9 @@ public class WebViewActivity extends AppCompatActivity {
         tutdecimals = findViewById(R.id.btn_tut_decimals);
         tutpercentage = findViewById(R.id.btn_tut_percentage);
 
+        // Check tutorial progression and apply lock states
+        applyTutorialLocks();
+        
         animateButtonFocus(tutaddition);
         animateButtonFocus(tutmultiplication);
         animateButtonFocus(tutdivision);
@@ -177,6 +180,22 @@ setupWebView();
             return;
         }
         
+        // Check tutorial progression (lock system)
+        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+        if (!tracker.canAccessTutorial(tutorialName)) {
+            String previousTut = tracker.getPreviousTutorial(tutorialName);
+            if (!previousTut.isEmpty()) {
+                Toast.makeText(this, 
+                    "Please complete the " + capitalizeFirst(previousTut) + " tutorial first!", 
+                    Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, 
+                    "Please complete the previous tutorial in your grade's sequence first!", 
+                    Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        
         Intent intent = new Intent(this, TutorialSelectionActivity.class);
         intent.putExtra("TUTORIAL_NAME", tutorialName);
         startActivity(intent);
@@ -232,6 +251,142 @@ setupWebView();
         }
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, "percentage")) {
             tutpercentage.setVisibility(View.GONE);
+        }
+    }
+    
+    // Apply lock states to tutorial buttons based on progression
+    private void applyTutorialLocks() {
+        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+        String grade = sharedPreferences.getGrade(this);
+        
+        // Map buttons to tutorial names
+        java.util.Map<AppCompatButton, String> buttonTutorialMap = new java.util.HashMap<>();
+        buttonTutorialMap.put(tutaddition, "addition");
+        buttonTutorialMap.put(tutsubtraction, "subtraction");
+        buttonTutorialMap.put(tutmultiplication, "multiplication");
+        buttonTutorialMap.put(tutdivision, "division");
+        buttonTutorialMap.put(tutdecimals, "decimals");
+        buttonTutorialMap.put(tutpercentage, "percentage");
+        
+        // Check each button and apply lock state
+        for (java.util.Map.Entry<AppCompatButton, String> entry : buttonTutorialMap.entrySet()) {
+            AppCompatButton button = entry.getKey();
+            String tutorialName = entry.getValue();
+            
+            // Skip if button is already hidden (grade restriction)
+            if (button.getVisibility() != View.VISIBLE) {
+                continue;
+            }
+            
+            // Check if tutorial is accessible
+            boolean canAccess = tracker.canAccessTutorial(tutorialName);
+            boolean isCompleted = tracker.isTutorialCompleted(tutorialName);
+            
+            if (!canAccess) {
+                // Lock the button
+                lockTutorialButton(button, tutorialName);
+            } else if (isCompleted) {
+                // Mark as completed (optional: show checkmark or different style)
+                markTutorialButtonCompleted(button);
+            } else {
+                // Unlock the button
+                unlockTutorialButton(button);
+            }
+        }
+    }
+    
+    // Lock a tutorial button (disable and show lock indicator)
+    private void lockTutorialButton(AppCompatButton button, String tutorialName) {
+        button.setEnabled(false);
+        button.setAlpha(0.5f); // Make it look disabled/grayed out
+        
+        // Get previous tutorial name for lock message
+        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+        String previousTut = tracker.getPreviousTutorial(tutorialName);
+        
+        // Add lock icon or text indicator
+        String currentText = button.getText().toString();
+        if (!currentText.contains("🔒")) {
+            button.setText("🔒 " + currentText);
+        }
+        
+        // Update click listener to show lock message
+        button.setOnClickListener(v -> {
+            playSound("click.mp3");
+            String message;
+            if (!previousTut.isEmpty()) {
+                message = "Please complete the " + capitalizeFirst(previousTut) + " tutorial first!";
+            } else {
+                message = "Please complete the previous tutorial in sequence first!";
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        });
+    }
+    
+    // Unlock a tutorial button (enable and remove lock indicator)
+    private void unlockTutorialButton(AppCompatButton button) {
+        button.setEnabled(true);
+        button.setAlpha(1.0f); // Full opacity
+        
+        // Remove lock icon if present
+        String currentText = button.getText().toString();
+        if (currentText.contains("🔒")) {
+            button.setText(currentText.replace("🔒 ", ""));
+        }
+        
+        // Restore original click listener based on button
+        String tutorialName = getTutorialNameFromButton(button);
+        if (tutorialName != null) {
+            button.setOnClickListener(v -> openTutorialSelection(tutorialName));
+        }
+    }
+    
+    // Mark tutorial button as completed (optional visual indicator)
+    private void markTutorialButtonCompleted(AppCompatButton button) {
+        button.setEnabled(true);
+        button.setAlpha(1.0f);
+        
+        // Optional: Add checkmark or different style
+        String currentText = button.getText().toString();
+        if (!currentText.contains("✓") && !currentText.contains("🔒")) {
+            // Don't add checkmark if already locked or completed
+        }
+        
+        // Restore original click listener
+        String tutorialName = getTutorialNameFromButton(button);
+        if (tutorialName != null) {
+            button.setOnClickListener(v -> openTutorialSelection(tutorialName));
+        }
+    }
+    
+    // Helper to get tutorial name from button
+    private String getTutorialNameFromButton(AppCompatButton button) {
+        if (button == tutaddition) return "addition";
+        if (button == tutsubtraction) return "subtraction";
+        if (button == tutmultiplication) return "multiplication";
+        if (button == tutdivision) return "division";
+        if (button == tutdecimals) return "decimals";
+        if (button == tutpercentage) return "percentage";
+        return null;
+    }
+    
+    // Helper to capitalize first letter
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+    
+    // Play sound effect
+    private void playSound(String fileName) {
+        try {
+            android.content.res.AssetFileDescriptor afd = getAssets().openFd(fileName);
+            android.media.MediaPlayer player = new android.media.MediaPlayer();
+            player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            player.prepare();
+            player.setOnCompletionListener(android.media.MediaPlayer::release);
+            player.start();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     
@@ -345,14 +500,17 @@ protected void onDestroy() {
     protected void onResume() {
         super.onResume();
         MusicManager.resume();
-
+        // Refresh tutorial locks when returning to this activity
+        // (in case a tutorial was completed)
+        if (tutaddition != null) {
+            applyTutorialLocks();
+        }
     }
-
-     @Override
+    
+    @Override
     protected void onPause() {
         super.onPause();
         MusicManager.pause();
-
     }
 
 

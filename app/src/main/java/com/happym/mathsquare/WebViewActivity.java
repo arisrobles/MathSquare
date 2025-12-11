@@ -84,10 +84,11 @@ public class WebViewActivity extends AppCompatActivity {
 
         FirebaseApp.initializeApp(this);
 
+        // Order: Addition, Subtraction, Multiplication, Division, Decimals, Percentage
         tutaddition = findViewById(R.id.btn_tut_addition);
+        tutsubtraction = findViewById(R.id.btn_tut_subtraction);
         tutmultiplication = findViewById(R.id.btn_tut_multiplication);
         tutdivision = findViewById(R.id.btn_tut_division);
-        tutsubtraction = findViewById(R.id.btn_tut_subtraction);
         tutdecimals = findViewById(R.id.btn_tut_decimals);
         tutpercentage = findViewById(R.id.btn_tut_percentage);
 
@@ -131,11 +132,11 @@ public class WebViewActivity extends AppCompatActivity {
     webView = findViewById(R.id.webView);
 setupWebView();
 
-        // Button click listeners to open tutorial selection screen
+        // Button click listeners to open tutorial selection screen (ordered)
         tutaddition.setOnClickListener(v -> openTutorialSelection("addition"));
+        tutsubtraction.setOnClickListener(v -> openTutorialSelection("subtraction"));
         tutmultiplication.setOnClickListener(v -> openTutorialSelection("multiplication"));
         tutdivision.setOnClickListener(v -> openTutorialSelection("division"));
-        tutsubtraction.setOnClickListener(v -> openTutorialSelection("subtraction"));
         tutdecimals.setOnClickListener(v -> openTutorialSelection("decimals"));
         tutpercentage.setOnClickListener(v -> openTutorialSelection("percentage"));
         
@@ -171,7 +172,7 @@ setupWebView();
 
     // Method to open tutorial selection screen
     private void openTutorialSelection(String tutorialName) {
-        // Check grade level access first
+        // Check grade level access first (guests are allowed all tutorials)
         String grade = sharedPreferences.getGrade(this);
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
             Toast.makeText(this, 
@@ -180,20 +181,23 @@ setupWebView();
             return;
         }
         
-        // Check tutorial progression (lock system)
-        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
-        if (!tracker.canAccessTutorial(tutorialName)) {
-            String previousTut = tracker.getPreviousTutorial(tutorialName);
-            if (!previousTut.isEmpty()) {
-                Toast.makeText(this, 
-                    "Please complete the " + capitalizeFirst(previousTut) + " tutorial first!", 
-                    Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, 
-                    "Please complete the previous tutorial in your grade's sequence first!", 
-                    Toast.LENGTH_LONG).show();
+        // For guests (grade == null), skip progression check and allow direct access
+        // For logged-in students, check tutorial progression (lock system)
+        if (grade != null) {
+            TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+            if (!tracker.canAccessTutorial(tutorialName)) {
+                String previousTut = tracker.getPreviousTutorial(tutorialName);
+                if (!previousTut.isEmpty()) {
+                    Toast.makeText(this, 
+                        "Please complete the " + capitalizeFirst(previousTut) + " tutorial first!", 
+                        Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, 
+                        "Please complete the previous tutorial in your grade's sequence first!", 
+                        Toast.LENGTH_LONG).show();
+                }
+                return;
             }
-            return;
         }
         
         Intent intent = new Intent(this, TutorialSelectionActivity.class);
@@ -203,9 +207,7 @@ setupWebView();
     
     // Method to open PDF tutorial with progression check (grade-specific) - kept for backwards compatibility
     private void checkAndOpenTutorial(String pdfFileName, String tutorialName) {
-        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
-        
-        // Check grade level access first
+        // Check grade level access first (guests are allowed all tutorials)
         String grade = sharedPreferences.getGrade(this);
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
             Toast.makeText(this, 
@@ -214,33 +216,43 @@ setupWebView();
             return;
         }
         
-        // Check if tutorial is accessible (previous one completed) - grade-specific
-        if (!tracker.canAccessTutorial(tutorialName)) {
-            String previousTut = tracker.getPreviousTutorial(tutorialName);
-            if (!previousTut.isEmpty()) {
-                Toast.makeText(this, 
-                    "Please complete the " + previousTut + " tutorial first!", 
-                    Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, 
-                    "Please complete the previous tutorial in your grade's sequence first!", 
-                    Toast.LENGTH_LONG).show();
+        // For guests (grade == null), skip progression check and allow direct access
+        // For logged-in students, check tutorial progression
+        if (grade != null) {
+            TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+            if (!tracker.canAccessTutorial(tutorialName)) {
+                String previousTut = tracker.getPreviousTutorial(tutorialName);
+                if (!previousTut.isEmpty()) {
+                    Toast.makeText(this, 
+                        "Please complete the " + previousTut + " tutorial first!", 
+                        Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, 
+                        "Please complete the previous tutorial in your grade's sequence first!", 
+                        Toast.LENGTH_LONG).show();
+                }
+                return;
             }
-            return;
+            
+            // Mark as completed when opened (only for logged-in students)
+            tracker.markTutorialCompleted(tutorialName);
         }
         
         Intent intent = new Intent(this, PDFViewerActivity.class);
         intent.putExtra("PDF_FILE", pdfFileName);
         intent.putExtra("TUTORIAL_NAME", tutorialName);
         startActivity(intent);
-        
-        // Mark as completed when opened (you can also mark when finished)
-        tracker.markTutorialCompleted(tutorialName);
     }
     
     // Filter tutorials based on grade level
+    // Note: Guests (grade == null) can see all tutorials
     private void filterTutorialsByGrade() {
         String grade = sharedPreferences.getGrade(this);
+        
+        // Guests can see all tutorials, so skip filtering
+        if (grade == null) {
+            return;
+        }
         
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, "multiplication")) {
             tutmultiplication.setVisibility(View.GONE);
@@ -255,9 +267,23 @@ setupWebView();
     }
     
     // Apply lock states to tutorial buttons based on progression
+    // Note: Guests (grade == null) have all tutorials unlocked
     private void applyTutorialLocks() {
-        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         String grade = sharedPreferences.getGrade(this);
+        
+        // Guests have all tutorials unlocked - skip lock system
+        if (grade == null) {
+            // Unlock all visible buttons for guests
+            if (tutaddition != null) unlockTutorialButton(tutaddition);
+            if (tutsubtraction != null) unlockTutorialButton(tutsubtraction);
+            if (tutmultiplication != null) unlockTutorialButton(tutmultiplication);
+            if (tutdivision != null) unlockTutorialButton(tutdivision);
+            if (tutdecimals != null) unlockTutorialButton(tutdecimals);
+            if (tutpercentage != null) unlockTutorialButton(tutpercentage);
+            return;
+        }
+        
+        TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         
         // Map buttons to tutorial names
         java.util.Map<AppCompatButton, String> buttonTutorialMap = new java.util.HashMap<>();

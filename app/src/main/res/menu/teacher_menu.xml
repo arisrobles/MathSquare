@@ -5,15 +5,15 @@
         android:icon="@drawable/ic_home"
         android:id="@+id/dashboard" />
 
-    <item android:title="Student Numbers"
+    <item android:title="Students"
         android:icon="@drawable/ic_student"
         android:id="@+id/student_numbers" />
 
-    <item android:title="Quiz Manager"
+    <item android:title="Quizzes"
         android:icon="@drawable/ic_edit"
         android:id="@+id/quiz_manager" />
 
-    <item android:title="Create Quiz"
+    <item android:title="Create"
         android:icon="@drawable/ic_quiz"
         android:id="@+id/create_quiz" />
 

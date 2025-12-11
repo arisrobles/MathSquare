@@ -39,6 +39,7 @@ public class PDFViewerActivity extends AppCompatActivity {
     private int totalPages = 0;
     private boolean isFullScreen = false;
     private String pdfFileName;
+    private String tutorialName;
 
     private PdfRenderer pdfRenderer;
     private PdfRenderer.Page currentPdfPage;
@@ -67,11 +68,8 @@ public class PDFViewerActivity extends AppCompatActivity {
             pdfFileName = "addition.pdf";
         }
         
-        // Mark tutorial as completed when viewer is opened
-        if (tutorialName != null) {
-            TutorialProgressTracker tracker = new TutorialProgressTracker(this);
-            tracker.markTutorialCompleted(tutorialName);
-        }
+        // Store tutorial name for completion tracking (will mark as completed when finished)
+        this.tutorialName = tutorialName;
 
         // Initialize views
         pdfImageView = findViewById(R.id.pdfView);
@@ -398,6 +396,8 @@ public class PDFViewerActivity extends AppCompatActivity {
                 Toast.makeText(this, "Video completed", Toast.LENGTH_SHORT).show();
                 // Keep music paused while video is showing
                 MusicManager.pause();
+                // Mark tutorial as completed when video finishes (only for logged-in students)
+                markTutorialCompletedIfNeeded();
             });
 
             // Update page info
@@ -470,6 +470,8 @@ public class PDFViewerActivity extends AppCompatActivity {
                     videoView.postDelayed(() -> showDecimalVideo(currentDecimalVideoIndex), 1000);
                 } else {
                     Toast.makeText(this, "All decimal videos completed", Toast.LENGTH_SHORT).show();
+                    // Mark tutorial as completed when all decimal videos finish (only for logged-in students)
+                    markTutorialCompletedIfNeeded();
                 }
             });
 
@@ -590,6 +592,10 @@ public class PDFViewerActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
+        // Mark tutorial as completed when student finishes viewing (only for logged-in students)
+        // This ensures they've at least opened and viewed the tutorial
+        markTutorialCompletedIfNeeded();
+
         // Stop background music
         stopBackgroundMusic();
 
@@ -615,6 +621,21 @@ public class PDFViewerActivity extends AppCompatActivity {
 
         // Resume global music
         MusicManager.resume();
+    }
+    
+    // Mark tutorial as completed (only for logged-in students, not guests)
+    private void markTutorialCompletedIfNeeded() {
+        if (tutorialName != null) {
+            String grade = com.happym.mathsquare.sharedPreferences.getGrade(this);
+            // Only mark as completed for logged-in students (not guests)
+            if (grade != null) {
+                TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+                // Only mark if not already completed (avoid duplicate marking)
+                if (!tracker.isTutorialCompleted(tutorialName)) {
+                    tracker.markTutorialCompleted(tutorialName);
+                }
+            }
+        }
     }
 
     @Override

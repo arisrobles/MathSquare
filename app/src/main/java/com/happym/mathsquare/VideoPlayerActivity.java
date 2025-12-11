@@ -41,6 +41,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private String tutorialName;
     private String grade;
     private int gradeNum;
+    private boolean hasMarkedCompleted = false; // Track if we've already marked as completed
     
     private LinearLayout stepByStepContainer;
     private LinearLayout additionalVideosContainer;
@@ -404,12 +405,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 // Inject JavaScript to show ONLY the video player - hide everything else
                 String js = 
                     "(function() { " +
-                    // Hide ALL unnecessary elements aggressively
+                    // Comprehensive function to hide all unwanted elements
                     "function hideAllElements() { " +
                     "  var selectors = [ " +
                     "    'header', '#header', '#masthead', " +
-                    "    '#comments', '#comments-section', '.ytd-comments', " +
+                    "    '#comments', '#comments-section', '.ytd-comments', 'ytd-comments', " +
+                    "    '#comment', '.comment', 'ytd-comment-thread-renderer', " +
+                    "    'ytd-comments-header-renderer', 'ytd-comment-simplebox-renderer', " +
                     "    '#related', '#related-videos', '.ytd-watch-next-secondary-results-renderer', " +
+                    "    'ytd-watch-next-secondary-results-renderer', 'ytd-item-section-renderer', " +
                     "    '.ytp-pause-overlay', '.ytp-suggested-action', " +
                     "    'footer', '#footer-container', " +
                     "    'nav', '#navigation', '.ytd-mobile-topbar-renderer', " +
@@ -422,32 +426,59 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     "    '.ytd-menu-renderer', '.ytd-toggle-button-renderer', " +
                     "    'ytd-app', 'ytd-masthead', 'ytd-mini-guide-renderer', " +
                     "    '.ytd-watch-metadata', '.metadata', " +
-                    "    'ytd-video-primary-info-renderer', 'ytd-video-secondary-info-renderer' " +
+                    "    'ytd-video-primary-info-renderer', 'ytd-video-secondary-info-renderer', " +
+                    "    'ytd-watch-metadata', 'ytd-watch-info-text', " +
+                    "    'ytd-video-meta-block', 'ytd-video-owner-renderer', " +
+                    "    'ytd-sentiment-bar-renderer', 'ytd-menu-renderer', " +
+                    "    'ytd-watch-flexy[flexy]', 'ytd-watch-flexy > *:not(ytd-player)', " +
+                    "    '#secondary', '#secondary-inner', " +
+                    "    'ytd-watch-next-secondary-results-renderer', " +
+                    "    'ytd-item-section-renderer:not(:has(video))', " +
+                    "    '[class*=\"comment\"]', '[id*=\"comment\"]', " +
+                    "    '[class*=\"related\"]', '[id*=\"related\"]' " +
                     "  ]; " +
                     "  selectors.forEach(function(sel) { " +
                     "    try { " +
                     "      var els = document.querySelectorAll(sel); " +
                     "      els.forEach(function(el) { " +
-                    "        if(el) { " +
-                    "          el.style.display = 'none'; " +
-                    "          el.style.visibility = 'hidden'; " +
-                    "          el.style.height = '0'; " +
-                    "          el.style.margin = '0'; " +
-                    "          el.style.padding = '0'; " +
+                    "        if(el && !el.querySelector('video')) { " +
+                    "          el.style.display = 'none !important'; " +
+                    "          el.style.visibility = 'hidden !important'; " +
+                    "          el.style.height = '0 !important'; " +
+                    "          el.style.margin = '0 !important'; " +
+                    "          el.style.padding = '0 !important'; " +
+                    "          el.style.opacity = '0'; " +
+                    "          el.setAttribute('hidden', 'true'); " +
                     "        } " +
                     "      }); " +
                     "    } catch(e) {} " +
                     "  }); " +
+                    "  // Also hide any element containing 'comment' in class or id " +
+                    "  try { " +
+                    "    var allElements = document.querySelectorAll('*'); " +
+                    "    allElements.forEach(function(el) { " +
+                    "      var className = el.className || ''; " +
+                    "      var id = el.id || ''; " +
+                    "      if ((className.toLowerCase().indexOf('comment') !== -1 || " +
+                    "           id.toLowerCase().indexOf('comment') !== -1) && " +
+                    "          !el.querySelector('video')) { " +
+                    "        el.style.display = 'none !important'; " +
+                    "        el.style.visibility = 'hidden !important'; " +
+                    "        el.style.height = '0 !important'; " +
+                    "      } " +
+                    "    }); " +
+                    "  } catch(e) {} " +
                     "} " +
                     "hideAllElements(); " +
                     // Show only the video player container
                     "function showOnlyVideo() { " +
-                    "  var playerContainer = document.querySelector('#player, #player-container, ytd-player, .html5-video-container'); " +
+                    "  var playerContainer = document.querySelector('#player, #player-container, ytd-player, .html5-video-container, ytd-player-legacy'); " +
                     "  if (playerContainer) { " +
                     "    playerContainer.style.display = 'block'; " +
                     "    playerContainer.style.visibility = 'visible'; " +
                     "    playerContainer.style.width = '100%'; " +
                     "    playerContainer.style.margin = '0 auto'; " +
+                    "    playerContainer.style.maxHeight = '100%'; " +
                     "  } " +
                     "} " +
                     "showOnlyVideo(); " +
@@ -464,14 +495,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     "    player.style.margin = '0'; " +
                     "    player.style.padding = '0'; " +
                     "    player.controls = true; " +
-                    "    // Make video clickable for play/pause " +
-                    "    player.addEventListener('click', function() { " +
-                    "      if (this.paused) { this.play(); } else { this.pause(); } " +
-                    "    }); " +
-                    "    // Ensure controls show on touch " +
-                    "    player.addEventListener('touchstart', function() { " +
-                    "      this.controls = true; " +
-                    "    }); " +
                     "  } " +
                     "} " +
                     "setupVideo(); " +
@@ -483,27 +506,88 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     "document.documentElement.style.backgroundColor = '#000'; " +
                     "document.documentElement.style.margin = '0'; " +
                     "document.documentElement.style.padding = '0'; " +
-                    // Hide main content container except video
-                    "var mainContent = document.querySelector('#content, #primary, ytd-watch-flexy'); " +
+                    "document.documentElement.style.overflow = 'hidden'; " +
+                    // Hide main content container except video - more aggressive
+                    "var mainContent = document.querySelector('#content, #primary, ytd-watch-flexy, ytd-watch'); " +
                     "if (mainContent) { " +
                     "  var children = mainContent.children; " +
                     "  for (var i = 0; i < children.length; i++) { " +
                     "    var child = children[i]; " +
-                    "    if (child.id !== 'player' && !child.querySelector('video')) { " +
-                    "      child.style.display = 'none'; " +
+                    "    if (child.id !== 'player' && child.id !== 'player-container' && " +
+                    "        !child.querySelector('video') && !child.querySelector('ytd-player')) { " +
+                    "      child.style.display = 'none !important'; " +
+                    "      child.style.visibility = 'hidden !important'; " +
+                    "      child.style.height = '0 !important'; " +
                     "    } " +
                     "  } " +
                     "} " +
+                    // Use MutationObserver to catch dynamically loaded content (like comments)
+                    "var observer = new MutationObserver(function(mutations) { " +
+                    "  hideAllElements(); " +
+                    "  showOnlyVideo(); " +
+                    "}); " +
+                    "observer.observe(document.body, { " +
+                    "  childList: true, " +
+                    "  subtree: true " +
+                    "}); " +
                     // Scroll to top to show video
                     "window.scrollTo(0, 0); " +
                     "})();";
                 
                 view.evaluateJavascript(js, null);
                 
-                // Also inject after delays to catch dynamically loaded content
+                // Also inject after delays to catch dynamically loaded content (comments load late)
                 view.postDelayed(() -> {
                     view.evaluateJavascript(
                         "(function() { " +
+                        "function hideCommentsAndRelated() { " +
+                        "  var hideSelectors = [ " +
+                        "    '#related', '#related-videos', '.ytd-watch-next-secondary-results-renderer', " +
+                        "    '#comments', '#comments-section', '.ytd-comments', 'ytd-comments', " +
+                        "    'ytd-comment-thread-renderer', 'ytd-comments-header-renderer', " +
+                        "    'ytd-comment-simplebox-renderer', '#comment', '.comment', " +
+                        "    '.ytp-suggested-action', '.ytp-pause-overlay', " +
+                        "    'header', 'footer', 'nav', " +
+                        "    '.ytd-video-primary-info-renderer', '#title', '.title', " +
+                        "    '.ytd-video-secondary-info-renderer', '#owner', '#description', " +
+                        "    'ytd-video-primary-info-renderer', 'ytd-video-secondary-info-renderer', " +
+                        "    '.ytd-watch-metadata', '.metadata', " +
+                        "    'ytd-action-panel-renderer', '#actions', " +
+                        "    '#secondary', '#secondary-inner', " +
+                        "    'ytd-item-section-renderer:not(:has(video))' " +
+                        "  ]; " +
+                        "  hideSelectors.forEach(function(sel) { " +
+                        "    try { " +
+                        "      var els = document.querySelectorAll(sel); " +
+                        "      els.forEach(function(el) { " +
+                        "        if(el && !el.querySelector('video') && !el.querySelector('ytd-player')) { " +
+                        "          el.style.display = 'none !important'; " +
+                        "          el.style.visibility = 'hidden !important'; " +
+                        "          el.style.height = '0 !important'; " +
+                        "          el.style.opacity = '0'; " +
+                        "        } " +
+                        "      }); " +
+                        "    } catch(e) {} " +
+                        "  }); " +
+                        "  // Hide any element with 'comment' in class/id " +
+                        "  try { " +
+                        "    var allElements = document.querySelectorAll('*'); " +
+                        "    allElements.forEach(function(el) { " +
+                        "      var className = (el.className && el.className.toString) ? el.className.toString() : ''; " +
+                        "      var id = el.id || ''; " +
+                        "      if ((className.toLowerCase().indexOf('comment') !== -1 || " +
+                        "           id.toLowerCase().indexOf('comment') !== -1 || " +
+                        "           className.toLowerCase().indexOf('related') !== -1 || " +
+                        "           id.toLowerCase().indexOf('related') !== -1) && " +
+                        "          !el.querySelector('video') && !el.querySelector('ytd-player')) { " +
+                        "        el.style.display = 'none !important'; " +
+                        "        el.style.visibility = 'hidden !important'; " +
+                        "        el.style.height = '0 !important'; " +
+                        "      } " +
+                        "    }); " +
+                        "  } catch(e) {} " +
+                        "} " +
+                        "hideCommentsAndRelated(); " +
                         "var player = document.querySelector('video'); " +
                         "if (player) { " +
                         "  player.setAttribute('controls', 'true'); " +
@@ -511,54 +595,65 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         "  player.style.width = '100%'; " +
                         "  player.style.maxWidth = '100%'; " +
                         "} " +
-                        // Hide title, comments, and all other elements
-                        "var hideSelectors = [ " +
-                        "  '#related', '#comments', '#comments-section', '.ytd-comments', " +
-                        "  '.ytp-suggested-action', '.ytp-pause-overlay', " +
-                        "  'header', 'footer', 'nav', " +
-                        "  '.ytd-video-primary-info-renderer', '#title', '.title', " +
-                        "  '.ytd-video-secondary-info-renderer', '#owner', '#description', " +
-                        "  'ytd-video-primary-info-renderer', 'ytd-video-secondary-info-renderer', " +
-                        "  '.ytd-watch-metadata', '.metadata', " +
-                        "  'ytd-action-panel-renderer', '#actions' " +
-                        "]; " +
-                        "hideSelectors.forEach(function(sel) { " +
-                        "  var els = document.querySelectorAll(sel); " +
-                        "  els.forEach(function(el) { " +
-                        "    if(el) { " +
-                        "      el.style.display = 'none'; " +
-                        "      el.style.visibility = 'hidden'; " +
-                        "      el.style.height = '0'; " +
-                        "    } " +
-                        "  }); " +
-                        "}); " +
+                        "window.scrollTo(0, 0); " +
                         "})();", null);
                 }, 1000);
                 
                 view.postDelayed(() -> {
                     view.evaluateJavascript(
                         "(function() { " +
+                        "function finalCleanup() { " +
+                        "  // Hide all comment and related elements " +
+                        "  var allElements = document.querySelectorAll('*'); " +
+                        "  allElements.forEach(function(el) { " +
+                        "    if (el.tagName !== 'VIDEO' && el.tagName !== 'BODY' && el.tagName !== 'HTML' && " +
+                        "        el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') { " +
+                        "      var hasVideo = el.querySelector('video') || el.querySelector('ytd-player'); " +
+                        "      var className = (el.className && el.className.toString) ? el.className.toString() : ''; " +
+                        "      var id = el.id || ''; " +
+                        "      var isCommentRelated = className.toLowerCase().indexOf('comment') !== -1 || " +
+                        "                            id.toLowerCase().indexOf('comment') !== -1 || " +
+                        "                            className.toLowerCase().indexOf('related') !== -1 || " +
+                        "                            id.toLowerCase().indexOf('related') !== -1; " +
+                        "      if (!hasVideo && (isCommentRelated || " +
+                        "          (el.id !== 'player' && el.id !== 'player-container' && " +
+                        "           !el.closest('ytd-player') && !el.closest('#player')))) { " +
+                        "        var rect = el.getBoundingClientRect(); " +
+                        "        if (isCommentRelated || rect.top > 400) { " +
+                        "          el.style.display = 'none !important'; " +
+                        "          el.style.visibility = 'hidden !important'; " +
+                        "          el.style.height = '0 !important'; " +
+                        "        } " +
+                        "      } " +
+                        "    } " +
+                        "  }); " +
+                        "} " +
+                        "finalCleanup(); " +
                         "var player = document.querySelector('video'); " +
                         "if (player && !player.controls) { " +
                         "  player.setAttribute('controls', 'true'); " +
                         "  player.controls = true; " +
                         "} " +
-                        // Final cleanup - hide anything that's not the video
-                        "var allElements = document.querySelectorAll('*'); " +
-                        "allElements.forEach(function(el) { " +
-                        "  if (el.tagName !== 'VIDEO' && el.tagName !== 'BODY' && el.tagName !== 'HTML') { " +
-                        "    var hasVideo = el.querySelector('video'); " +
-                        "    if (!hasVideo && el.id !== 'player' && el.id !== 'player-container') { " +
-                        "      var rect = el.getBoundingClientRect(); " +
-                        "      if (rect.top > 500 || rect.bottom < 0) { " +
-                        "        el.style.display = 'none'; " +
-                        "      } " +
-                        "    } " +
+                        "window.scrollTo(0, 0); " +
+                        "})();", null);
+                }, 2000);
+                
+                // Additional cleanup after 3 seconds to catch late-loading comments
+                view.postDelayed(() -> {
+                    view.evaluateJavascript(
+                        "(function() { " +
+                        "var commentElements = document.querySelectorAll('[class*=\"comment\"], [id*=\"comment\"], [class*=\"related\"], [id*=\"related\"], ytd-comments, ytd-comment-thread-renderer, ytd-watch-next-secondary-results-renderer'); " +
+                        "commentElements.forEach(function(el) { " +
+                        "  if (el && !el.querySelector('video') && !el.querySelector('ytd-player')) { " +
+                        "    el.style.display = 'none !important'; " +
+                        "    el.style.visibility = 'hidden !important'; " +
+                        "    el.style.height = '0 !important'; " +
+                        "    el.style.opacity = '0'; " +
                         "  } " +
                         "}); " +
                         "window.scrollTo(0, 0); " +
                         "})();", null);
-                }, 2000);
+                }, 3000);
             }
             
             @Override
@@ -591,8 +686,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         webView.loadUrl(mobileUrl);
         
         // Make WebView fill the container width with proper height
-        // Use a larger height to accommodate the full mobile YouTube page
-        int webViewHeight = (int) (getResources().getDisplayMetrics().heightPixels * 0.6); // 60% of screen height
+        // Use a smaller height to only show video player (hide comments/related below)
+        int webViewHeight = (int) (getResources().getDisplayMetrics().widthPixels * 0.5625); // 16:9 aspect ratio based on width
         
         LinearLayout.LayoutParams webViewParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -786,6 +881,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
             Toast.makeText(this, "Video completed", Toast.LENGTH_SHORT).show();
             // Keep music paused while in video player
             MusicManager.pause();
+            // Mark tutorial as completed when local video finishes (only for logged-in students)
+            markTutorialCompletedIfNeeded();
         });
         
         videoContainer.addView(videoView);
@@ -845,6 +942,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
     
     private int getGradeNumber(String grade) {
         try {
+            // Handle null grade (guests) - default to grade 5 to allow all tutorials
+            if (grade == null) {
+                return 5; // Grade 5 allows all tutorials
+            }
+            
             if (grade.startsWith("grade_")) {
                 String numStr = grade.replace("grade_", "")
                     .replace("one", "1").replace("two", "2")
@@ -855,7 +957,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 return Integer.parseInt(grade);
             }
         } catch (NumberFormatException e) {
-            return 1;
+            return 5; // Default to grade 5 for guests to allow all tutorials
         }
     }
     
@@ -906,8 +1008,26 @@ public class VideoPlayerActivity extends AppCompatActivity {
         if (soundEffectPlayer != null) {
             soundEffectPlayer.release();
         }
+        // Mark tutorial as completed when student finishes viewing videos (only for logged-in students)
+        // This ensures they've at least opened and viewed the tutorial videos
+        markTutorialCompletedIfNeeded();
         // Resume app music when video player is closed
         MusicManager.resume();
+    }
+    
+    // Mark tutorial as completed (only for logged-in students, not guests)
+    private void markTutorialCompletedIfNeeded() {
+        if (tutorialName != null && !hasMarkedCompleted) {
+            // Only mark as completed for logged-in students (not guests)
+            if (grade != null) {
+                TutorialProgressTracker tracker = new TutorialProgressTracker(this);
+                // Only mark if not already completed (avoid duplicate marking)
+                if (!tracker.isTutorialCompleted(tutorialName)) {
+                    tracker.markTutorialCompleted(tutorialName);
+                    hasMarkedCompleted = true;
+                }
+            }
+        }
     }
 }
 

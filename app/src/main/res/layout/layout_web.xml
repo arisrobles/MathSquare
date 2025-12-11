@@ -82,6 +82,21 @@
                  android:textSize="23sp"
                  android:textColor="#FFFFFF"
                  android:layout_marginBottom="20dp"
+                 android:background="@drawable/btn_subtraction_tuts"
+                 android:textAlignment="gravity"
+                 android:fontFamily="@font/paytone_one"
+                 android:paddingBottom="5dp"
+                 app:cornerRadius="2sp"
+                 android:id="@+id/btn_tut_subtraction"
+                 android:paddingTop="5dp"
+                 android:text="Subtraction" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                 android:layout_height="65dp"
+                 android:layout_width="300sp"
+                 android:textSize="23sp"
+                 android:textColor="#FFFFFF"
+                 android:layout_marginBottom="20dp"
                  android:background="@drawable/btn_multiplication_tuts"
                  android:textAlignment="gravity"
                  android:fontFamily="@font/paytone_one"
@@ -105,21 +120,6 @@
                  android:id="@+id/btn_tut_division"
                  android:paddingTop="5dp"
                  android:text="Division" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                 android:layout_height="65dp"
-                 android:layout_width="300sp"
-                 android:textSize="23sp"
-                 android:textColor="#FFFFFF"
-                 android:layout_marginBottom="20dp"
-                 android:background="@drawable/btn_subtraction_tuts"
-                 android:textAlignment="gravity"
-                 android:fontFamily="@font/paytone_one"
-                 android:paddingBottom="5dp"
-                 app:cornerRadius="2sp"
-                 android:id="@+id/btn_tut_subtraction"
-                 android:paddingTop="5dp"
-                 android:text="Subtraction" />
 
             <androidx.appcompat.widget.AppCompatButton
                  android:layout_height="65dp"

@@ -283,7 +283,7 @@
         app:itemTextColor="@color/bottom_nav_item_color"
         app:itemIconSize="34dp"
         app:itemRippleColor="#30FF4081"
-        app:labelVisibilityMode="unlabeled"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

@@ -94,8 +94,9 @@ public class TutorialSelectionActivity extends AppCompatActivity {
         AppCompatButton videosBtn = createButton("Videos", () -> openVideos());
         buttonContainer.addView(videosBtn);
             
-        // Slides button - opens PDF tutorial (only for grade 3-6)
-        if (gradeNum > 2) {
+        // Slides button - opens PDF tutorial (for grade 3-6 and guests)
+        // Guests (grade == null) get gradeNum = 5, so they can access slides
+        if (gradeNum > 2 || grade == null) {
             AppCompatButton slidesBtn = createButton("Slides", () -> openPDFTutorial());
             buttonContainer.addView(slidesBtn);
         }
@@ -170,7 +171,7 @@ public class TutorialSelectionActivity extends AppCompatActivity {
     private void openPDFTutorial() {
         TutorialProgressTracker tracker = new TutorialProgressTracker(this);
         
-        // Check grade level access
+        // Check grade level access (guests are allowed all tutorials)
         if (!GradeRestrictionUtil.isTutorialAllowedForGrade(grade, tutorialName)) {
             Toast.makeText(this, 
                 "This tutorial is not available for your grade level", 
@@ -178,8 +179,9 @@ public class TutorialSelectionActivity extends AppCompatActivity {
             return;
         }
         
-        // Check if tutorial is accessible
-        if (!tracker.canAccessTutorial(tutorialName)) {
+        // For guests, skip progression check and allow direct access
+        // For logged-in students, check tutorial progression
+        if (grade != null && !tracker.canAccessTutorial(tutorialName)) {
             String previousTut = tracker.getPreviousTutorial(tutorialName);
             if (!previousTut.isEmpty()) {
                 Toast.makeText(this, 
@@ -200,11 +202,16 @@ public class TutorialSelectionActivity extends AppCompatActivity {
         intent.putExtra("SHOW_VIDEO_AFTER", false); // Don't show video after slides - it's available in Videos section
         startActivity(intent);
         
-        tracker.markTutorialCompleted(tutorialName);
+        // Note: Tutorial completion is now handled by PDFViewerActivity when student finishes viewing
     }
     
     private int getGradeNumber(String grade) {
         try {
+            // Handle null grade (guests) - default to grade 5 to allow all tutorials
+            if (grade == null) {
+                return 5; // Grade 5 allows all tutorials
+            }
+            
             if (grade.startsWith("grade_")) {
                 String numStr = grade.replace("grade_", "")
                     .replace("one", "1").replace("two", "2")
@@ -215,7 +222,7 @@ public class TutorialSelectionActivity extends AppCompatActivity {
                 return Integer.parseInt(grade);
             }
         } catch (NumberFormatException e) {
-            return 1;
+            return 5; // Default to grade 5 for guests to allow all tutorials
         }
     }
     

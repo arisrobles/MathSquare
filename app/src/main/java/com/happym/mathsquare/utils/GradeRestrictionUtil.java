@@ -35,9 +35,15 @@ public class GradeRestrictionUtil {
     /**
      * Check if a grade level is allowed to access a specific tutorial
      * Implements defense comment #7: Tutorial - Appropriate to grade level
+     * Note: Guests (grade == null) have access to all tutorials
      */
     public static boolean isTutorialAllowedForGrade(String grade, String tutorialName) {
-        if (grade == null || tutorialName == null) return false;
+        if (tutorialName == null) return false;
+        
+        // Guests (grade == null) have access to all tutorials
+        if (grade == null) {
+            return true;
+        }
         
         int gradeNum = getGradeNumber(grade);
         String tutLower = tutorialName.toLowerCase();

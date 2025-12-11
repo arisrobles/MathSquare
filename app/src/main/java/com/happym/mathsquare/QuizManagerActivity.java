@@ -46,6 +46,10 @@ public class QuizManagerActivity extends AppCompatActivity {
     private String selectedSectionFilter = "All";
     private boolean isCSVMode = false;
     private CSVProcessor csvProcessor;
+    // Teacher defaults
+    private String teacherAssignedGrade = null;
+    private String teacherAssignedSection = null;
+    private boolean defaultFiltersApplied = false;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,9 +76,10 @@ public class QuizManagerActivity extends AppCompatActivity {
         csvProcessor = new CSVProcessor();
         allCSVQuizzes = new ArrayList<>();
         
-        // Setup spinners
-        setupGradeFilterSpinner();
-        loadSections();
+        // Setup spinners will be done after fetching teacher's assigned grade/section
+        // Initialize with default "All" options first
+        setupGradeFilterSpinner(null);
+        loadSections(null, null);
         
         // Setup filter listeners
         gradeFilterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -126,15 +131,30 @@ public class QuizManagerActivity extends AppCompatActivity {
         loadAllQuizzes();
     }
     
-    private void setupGradeFilterSpinner() {
-        String[] grades = {"All", "1", "2", "3", "4", "5", "6"};
+    private void setupGradeFilterSpinner(String assignedGrade) {
+        List<String> grades = new ArrayList<>();
+        grades.add("All");
+        
+        // Only add the teacher's assigned grade if they have one
+        if (assignedGrade != null && !assignedGrade.isEmpty()) {
+            grades.add(assignedGrade);
+        } else {
+            // If no assigned grade, show all grades (fallback)
+            grades.add("1");
+            grades.add("2");
+            grades.add("3");
+            grades.add("4");
+            grades.add("5");
+            grades.add("6");
+        }
+        
         ArrayAdapter<String> gradeAdapter = new ArrayAdapter<>(
             this, android.R.layout.simple_spinner_item, grades);
         gradeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         gradeFilterSpinner.setAdapter(gradeAdapter);
     }
     
-    private void loadSections() {
+    private void loadSections(String assignedGrade, String assignedSection) {
         db.collection("Sections")
             .orderBy("Grade_Number", Query.Direction.ASCENDING)
             .get()
@@ -144,15 +164,34 @@ public class QuizManagerActivity extends AppCompatActivity {
                     List<String> sectionDisplayList = new ArrayList<>();
                     sectionDisplayList.add("All Sections");
                     
-                    for (QueryDocumentSnapshot doc : task.getResult()) {
-                        Long gradeNumLong = doc.getLong("Grade_Number");
-                        String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
-                        String section = doc.getString("Section");
-                        String docId = doc.getId();
-                        
-                        if (grade != null && section != null) {
-                            sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
-                            sectionDisplayList.add("Grade " + grade + " - " + section);
+                    // If teacher has assigned grade and section, only show that specific section
+                    if (assignedGrade != null && assignedSection != null) {
+                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                            Long gradeNumLong = doc.getLong("Grade_Number");
+                            String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
+                            String section = doc.getString("Section");
+                            String docId = doc.getId();
+                            
+                            // Only add the section that matches teacher's assignment
+                            if (grade != null && section != null && 
+                                assignedGrade.equals(grade) && assignedSection.equals(section)) {
+                                sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
+                                sectionDisplayList.add("Grade " + grade + " - " + section);
+                                break; // Found the matching section, no need to continue
+                            }
+                        }
+                    } else {
+                        // If no assigned grade/section, show all sections (fallback)
+                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                            Long gradeNumLong = doc.getLong("Grade_Number");
+                            String grade = gradeNumLong != null ? String.valueOf(gradeNumLong.intValue()) : null;
+                            String section = doc.getString("Section");
+                            String docId = doc.getId();
+                            
+                            if (grade != null && section != null) {
+                                sectionsList.add(new com.happym.mathsquare.Model.Sections(section, grade, docId));
+                                sectionDisplayList.add("Grade " + grade + " - " + section);
+                            }
                         }
                     }
                     
@@ -160,6 +199,9 @@ public class QuizManagerActivity extends AppCompatActivity {
                         this, android.R.layout.simple_spinner_item, sectionDisplayList);
                     sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     sectionFilterSpinner.setAdapter(sectionAdapter);
+                    
+                    // Apply default spinner selections if teacher assignment is known
+                    applyDefaultFiltersIfNeeded();
                 }
             });
     }
@@ -168,9 +210,84 @@ public class QuizManagerActivity extends AppCompatActivity {
         quizzesListLayout.removeAllViews();
         txtEmptyState.setVisibility(View.GONE);
         
-        // Load TeacherQuizzes (complete quizzes with scheduling)
-        db.collection("TeacherQuizzes")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
+        // Get logged-in teacher's email and assigned grade/section
+        String teacherEmail = sharedPreferences.getEmail(this);
+        
+        if (teacherEmail == null || teacherEmail.isEmpty()) {
+            Toast.makeText(this, "Error: Teacher email not found. Please log in again.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        
+        // Fetch teacher's assigned grade and section from TeacherProfiles
+        db.collection("TeacherProfiles")
+            .whereEqualTo("email", teacherEmail)
+            .limit(1)
+            .get()
+            .addOnCompleteListener(profileTask -> {
+                if (profileTask.isSuccessful() && profileTask.getResult() != null && !profileTask.getResult().isEmpty()) {
+                    com.google.firebase.firestore.DocumentSnapshot teacherDoc = profileTask.getResult().getDocuments().get(0);
+                    teacherAssignedGrade = teacherDoc.getString("assignedGrade");
+                    teacherAssignedSection = teacherDoc.getString("assignedSection");
+                    if (teacherAssignedGrade != null) {
+                        selectedGradeFilter = teacherAssignedGrade;
+                    }
+                    if (teacherAssignedSection != null) {
+                        selectedSectionFilter = teacherAssignedSection;
+                    }
+                    
+                    // Update filter dropdowns to only show teacher's assigned grade/section
+                    setupGradeFilterSpinner(teacherAssignedGrade);
+                    loadSections(teacherAssignedGrade, teacherAssignedSection);
+                    
+                    Log.d("QuizManager", "Teacher assigned - Grade: " + teacherAssignedGrade + ", Section: " + teacherAssignedSection);
+                    loadQuizzesWithFilters(teacherEmail, teacherAssignedGrade, teacherAssignedSection);
+                } else {
+                    // Fallback: try to get from MyProfile
+                    db.collection("Accounts")
+                        .document("Teachers")
+                        .collection(teacherEmail)
+                        .document("MyProfile")
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            String assignedGrade = null;
+                            String assignedSection = null;
+                            if (doc.exists()) {
+                                assignedGrade = doc.getString("assignedGrade");
+                                assignedSection = doc.getString("assignedSection");
+                                teacherAssignedGrade = assignedGrade;
+                                teacherAssignedSection = assignedSection;
+                                if (teacherAssignedGrade != null) {
+                                    selectedGradeFilter = teacherAssignedGrade;
+                                }
+                                if (teacherAssignedSection != null) {
+                                    selectedSectionFilter = teacherAssignedSection;
+                                }
+                                Log.d("QuizManager", "Teacher assigned (from MyProfile) - Grade: " + assignedGrade + ", Section: " + assignedSection);
+                            }
+                            
+                            // Update filter dropdowns to only show teacher's assigned grade/section
+                            setupGradeFilterSpinner(assignedGrade);
+                            loadSections(assignedGrade, assignedSection);
+                            
+                            loadQuizzesWithFilters(teacherEmail, assignedGrade, assignedSection);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.w("QuizManager", "Could not fetch teacher profile, loading all quizzes for teacher");
+                            // Keep default "All" options in dropdowns if profile fetch fails
+                            loadQuizzesWithFilters(teacherEmail, null, null);
+                        });
+                }
+            });
+    }
+    
+    private void loadQuizzesWithFilters(String teacherEmail, String assignedGrade, String assignedSection) {
+        // Load TeacherQuizzes filtered by teacher's email OR their assigned grade/section
+        Query query = db.collection("TeacherQuizzes");
+        
+        // Filter: Show quizzes created by this teacher OR quizzes matching their assigned grade/section
+        // Since Firestore doesn't support OR queries easily, we'll fetch and filter client-side
+        query.orderBy("createdAt", Query.Direction.ASCENDING)
             .get()
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -178,11 +295,37 @@ public class QuizManagerActivity extends AppCompatActivity {
                     
                     for (QueryDocumentSnapshot doc : task.getResult()) {
                         Map<String, Object> quizData = new HashMap<>(doc.getData());
-                        quizData.put("documentId", doc.getId()); // Store document ID for editing/deleting
-                        allQuizzes.add(quizData);
+                        String quizCreatedBy = quizData.get("createdBy") != null ? quizData.get("createdBy").toString() : null;
+                        String quizGrade = quizData.get("grade") != null ? quizData.get("grade").toString() : null;
+                        String quizSection = quizData.get("section") != null ? quizData.get("section").toString() : null;
+                        
+                        // Include quiz if:
+                        // 1. Created by this teacher, OR
+                        // 2. Matches teacher's assigned grade AND section (if both are set)
+                        boolean shouldInclude = false;
+                        
+                        if (teacherEmail != null && teacherEmail.equals(quizCreatedBy)) {
+                            // Quiz created by this teacher
+                            shouldInclude = true;
+                        } else if (assignedGrade != null && assignedSection != null) {
+                            // Check if quiz matches teacher's assigned grade and section
+                            if (assignedGrade.equals(quizGrade) && assignedSection.equals(quizSection)) {
+                                shouldInclude = true;
+                            }
+                        } else if (assignedGrade != null) {
+                            // Only grade is assigned, match by grade
+                            if (assignedGrade.equals(quizGrade)) {
+                                shouldInclude = true;
+                            }
+                        }
+                        
+                        if (shouldInclude) {
+                            quizData.put("documentId", doc.getId()); // Store document ID for editing/deleting
+                            allQuizzes.add(quizData);
+                        }
                     }
                     
-                    Log.d("QuizManager", "Loaded " + allQuizzes.size() + " teacher quizzes");
+                    Log.d("QuizManager", "Loaded " + allQuizzes.size() + " quizzes for teacher: " + teacherEmail);
                     filterAndDisplayQuizzes();
                 } else {
                     Toast.makeText(this, "Error loading quizzes: " + 
@@ -190,6 +333,42 @@ public class QuizManagerActivity extends AppCompatActivity {
                         Toast.LENGTH_LONG).show();
                 }
             });
+    }
+    
+    /**
+     * Apply default spinner selections based on teacher's assigned grade/section.
+     * Keeps filters editable while defaulting to the teacher's assignment.
+     */
+    private void applyDefaultFiltersIfNeeded() {
+        if (defaultFiltersApplied) return;
+        
+        // Grade spinner
+        if (teacherAssignedGrade != null && gradeFilterSpinner != null && gradeFilterSpinner.getAdapter() != null) {
+            ArrayAdapter<?> adapter = (ArrayAdapter<?>) gradeFilterSpinner.getAdapter();
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (teacherAssignedGrade.equals(adapter.getItem(i).toString())) {
+                    gradeFilterSpinner.setSelection(i);
+                    selectedGradeFilter = teacherAssignedGrade;
+                    break;
+                }
+            }
+        }
+        
+        // Section spinner uses display format: "Grade X - Section"
+        if (teacherAssignedGrade != null && teacherAssignedSection != null &&
+            sectionFilterSpinner != null && sectionFilterSpinner.getAdapter() != null) {
+            ArrayAdapter<?> adapter = (ArrayAdapter<?>) sectionFilterSpinner.getAdapter();
+            String target = "Grade " + teacherAssignedGrade + " - " + teacherAssignedSection;
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (target.equals(adapter.getItem(i).toString())) {
+                    sectionFilterSpinner.setSelection(i);
+                    selectedSectionFilter = target;
+                    break;
+                }
+            }
+        }
+        
+        defaultFiltersApplied = true;
     }
     
     private void filterAndDisplayQuizzes() {
@@ -205,6 +384,7 @@ public class QuizManagerActivity extends AppCompatActivity {
     private void filterAndDisplayCustomQuizzes() {
         List<Map<String, Object>> filteredQuizzes = new ArrayList<>();
         
+        // Filter quizzes - maintains the order from allQuizzes (oldest to newest)
         for (Map<String, Object> quiz : allQuizzes) {
             String quizGrade = quiz.get("grade") != null ? quiz.get("grade").toString() : null;
             String quizSection = quiz.get("section") != null ? quiz.get("section").toString() : null;
@@ -225,6 +405,9 @@ public class QuizManagerActivity extends AppCompatActivity {
                 filteredQuizzes.add(quiz);
             }
         }
+        
+        // Filtered quizzes maintain the same order (oldest to newest) as allQuizzes
+        // No need to sort again since allQuizzes is already sorted by createdAt ASCENDING
         
         if (filteredQuizzes.isEmpty()) {
             txtEmptyState.setVisibility(View.VISIBLE);

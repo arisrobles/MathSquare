@@ -84,6 +84,14 @@ public class ScoreHistoryActivity extends AppCompatActivity {
                         String quizNo = doc.getString("quizno");
                         Date timestamp = doc.getDate("timestamp");
                         
+                        // Skip entries with unknown/empty gameType or quiz title/number
+                        if (gameType == null || gameType.trim().isEmpty() || "Unknown".equalsIgnoreCase(gameType.trim())) {
+                            continue;
+                        }
+                        if (quizNo == null || quizNo.trim().isEmpty() || "N/A".equalsIgnoreCase(quizNo.trim()) || "Unknown".equalsIgnoreCase(quizNo.trim())) {
+                            continue;
+                        }
+                        
                         // Get attempt number (default to 1 if not set for backwards compatibility)
                         Long attemptNumLong = doc.getLong("attemptNumber");
                         int attemptNumber = attemptNumLong != null ? attemptNumLong.intValue() : 1;
@@ -96,8 +104,8 @@ public class ScoreHistoryActivity extends AppCompatActivity {
                             String attemptStr = formatAttemptNumber(attemptNumber);
                             
                             ScoreHistoryItem item = new ScoreHistoryItem(
-                                gameType != null ? gameType : "Unknown",
-                                quizNo != null ? quizNo : "N/A",
+                                gameType,
+                                quizNo,
                                 score,
                                 dateStr,
                                 timeStr,

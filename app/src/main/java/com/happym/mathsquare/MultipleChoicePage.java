@@ -97,6 +97,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.happym.mathsquare.sharedPreferences;
+import com.happym.mathsquare.utils.QuizStateManager;
 
 public class MultipleChoicePage extends AppCompatActivity
         implements PauseDialog.PauseDialogListener {
@@ -115,6 +116,7 @@ public class MultipleChoicePage extends AppCompatActivity
     private List<MathProblem> problemSet = new ArrayList<>();
     private List<MathProblem> answeredQuestions = new ArrayList<>();
     private FirebaseFirestore db;
+    private QuizStateManager quizStateManager;
 
     private ImageButton imgBtn_pause;
 
@@ -156,6 +158,7 @@ public class MultipleChoicePage extends AppCompatActivity
         setContentView(R.layout.activity_multiplechoice);
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
+        quizStateManager = new QuizStateManager(this);
         
         // Register back button handler - show pause dialog instead of exiting
         androidx.activity.OnBackPressedCallback callback = new androidx.activity.OnBackPressedCallback(true) {
@@ -206,6 +209,9 @@ public class MultipleChoicePage extends AppCompatActivity
                     @Override
                     public void onClick(View v) {
                     playSound("click.mp3");
+                        // Save quiz state before showing pause dialog
+                        saveQuizState();
+                        
                         int currentScore = currentQuestionIndex;
                         currentScore++;
                         boolean isPaused = true; // Set based on your conditions
@@ -318,11 +324,54 @@ if (operationList == null || operationList.isEmpty()) {
                 Log.e("CSVQuiz", "⚠️ Difficulty is empty for CSV quiz! Defaulting to 'Easy'");
                 difficulty = "Easy"; // Default to Easy if not provided
             }
-            Log.d("CSVQuiz", "Starting CSV quiz with difficulty: " + difficulty + ", operations: " + operationList);
-            Toast.makeText(this, operationList.toString() , Toast.LENGTH_SHORT)
-                    .show();
-
+            
+            // Check for saved quiz state
+            QuizStateManager.QuizState savedState = quizStateManager.loadQuizState(quidId);
+            if (savedState != null && !savedState.isFirebaseQuiz) {
+                // Restore saved state
+                Log.d("CSVQuiz", "Restoring saved quiz state - Question: " + savedState.currentQuestionIndex + 
+                      ", Score: " + savedState.score + ", Time: " + savedState.timeLeftInMillis);
+                currentQuestionIndex = savedState.currentQuestionIndex;
+                score = savedState.score;
+                timeLeftInMillis = savedState.timeLeftInMillis;
+                heartLimit = savedState.heartLimit;
+                usedOperations = new ArrayList<>(savedState.usedOperations);
+                operationText = savedState.currentOperation;
+                
+                // Restore the current operation's problem set
+                if (operationText != null && !operationText.isEmpty()) {
+                    setupProblemSetList(difficulty, operationText);
+                    // Generate question at the saved index
+                    if (currentQuestionIndex < problemSet.size()) {
+                        int questionIndexInOperation = currentQuestionIndex % 5;
+                        if (questionIndexInOperation < problemSet.size()) {
+                            generateNewQuestion(questionIndexInOperation, problemSet);
+                        } else {
+                            // If we've completed this operation, move to next
            switchOperation(difficulty);
+                        }
+                    }
+                } else {
+                    // No saved operation, start fresh
+                    switchOperation(difficulty);
+                }
+                
+                // Update UI
+                updateHeartDisplay();
+                questionProgressTextView.setText((currentQuestionIndex + 1) + "/" + (operationList.size() * 5));
+                
+                // Resume timer
+                if (timeLeftInMillis > 0) {
+                    startTimer(timeLeftInMillis);
+                } else {
+                    startTimer(timerLimit * 60 * 1000L);
+                }
+            } else {
+                // No saved state, start fresh
+                Log.d("CSVQuiz", "Starting CSV quiz with difficulty: " + difficulty + ", operations: " + operationList);
+                Toast.makeText(this, operationList.toString() , Toast.LENGTH_SHORT).show();
+                switchOperation(difficulty);
+            }
 
         } else if (!"Quiz".equals(gameType)){
 
@@ -1057,7 +1106,75 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
     @Override
     public void onResumeGame(boolean resumeGame) {
         if (resumeGame) {
+            // For CSV quizzes, restore state if available (in case activity wasn't recreated)
+            String gameType = getIntent().getStringExtra("game_type");
+            boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+            
+            if ("Quiz".equals(gameType) && !isFirebaseQuiz && quidId != null) {
+                QuizStateManager.QuizState savedState = quizStateManager.loadQuizState(quidId);
+                if (savedState != null && savedState.currentQuestionIndex > 0) {
+                    // Restore state if not already restored
+                    if (currentQuestionIndex == 0 && savedState.currentQuestionIndex > 0) {
+                        Log.d("CSVQuiz", "Restoring state in onResumeGame - Question: " + savedState.currentQuestionIndex);
+                        currentQuestionIndex = savedState.currentQuestionIndex;
+                        score = savedState.score;
+                        heartLimit = savedState.heartLimit;
+                        usedOperations = new ArrayList<>(savedState.usedOperations);
+                        operationText = savedState.currentOperation;
+                        
+                        // Restore problem set and generate question
+                        if (operationText != null && !operationText.isEmpty() && difficulty != null) {
+                            setupProblemSetList(difficulty, operationText);
+                            int questionIndexInOperation = currentQuestionIndex % 5;
+                            if (questionIndexInOperation < problemSet.size()) {
+                                generateNewQuestion(questionIndexInOperation, problemSet);
+                            }
+                        }
+                        
+                        // Update UI
+                        updateHeartDisplay();
+                        int totalQuestions = operationList != null ? operationList.size() * 5 : 10;
+                        questionProgressTextView.setText((currentQuestionIndex + 1) + "/" + totalQuestions);
+                    }
+                    
+                    // Resume timer with saved time
+                    if (savedState.timeLeftInMillis > 0) {
+                        timeLeftInMillis = savedState.timeLeftInMillis;
             startTimer(timeLeftInMillis);
+                    } else {
+                        startTimer(timerLimit * 60 * 1000L);
+                    }
+                } else {
+                    // No saved state, just resume timer
+                    startTimer(timeLeftInMillis > 0 ? timeLeftInMillis : timerLimit * 60 * 1000L);
+                }
+            } else {
+                // For non-CSV quizzes or Firebase quizzes, just resume timer
+                startTimer(timeLeftInMillis > 0 ? timeLeftInMillis : timerLimit * 60 * 1000L);
+            }
+        }
+    }
+    
+    /**
+     * Save current quiz state
+     */
+    private void saveQuizState() {
+        String gameType = getIntent().getStringExtra("game_type");
+        boolean isFirebaseQuiz = getIntent().getBooleanExtra("isFirebaseQuiz", false);
+        
+        if ("Quiz".equals(gameType) && quidId != null) {
+            quizStateManager.saveQuizState(
+                quidId,
+                currentQuestionIndex,
+                score,
+                timeLeftInMillis,
+                isFirebaseQuiz,
+                operationText,
+                new HashSet<>(usedOperations),
+                heartLimit
+            );
+            Log.d("QuizState", "Saved quiz state - Question: " + currentQuestionIndex + 
+                  ", Score: " + score + ", Time: " + timeLeftInMillis);
         }
     }
 
@@ -1347,6 +1464,11 @@ private int blendColors(int colorStart, int colorEnd, float ratio) {
      * and then starts the new activity. Adjust the threshold and extras as needed.
      */
     private void launchResultsActivity(String gameType) {
+        // Clear saved quiz state when quiz is completed
+        if (quidId != null) {
+            quizStateManager.clearQuizState(quidId);
+            Log.d("QuizState", "Cleared quiz state for completed quiz: " + quidId);
+        }
         Intent intent = new Intent(MultipleChoicePage.this, Results.class);
 
         // Add answered questions to intent
@@ -1522,6 +1644,9 @@ private void playEffectSound(String fileName) {
         if (countDownTimer != null) {
             countDownTimer.cancel(); // Stop the timer
         }
+        // Save quiz state before showing pause dialog
+        saveQuizState();
+        
         // Check if the activity is still valid and not finishing
         if (!isFinishing() && !isDestroyed()) {
             PauseDialog pauseDialog = PauseDialog.newInstance(true, heartLimit);

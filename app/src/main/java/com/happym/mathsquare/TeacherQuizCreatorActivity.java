@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -128,6 +129,8 @@ public class TeacherQuizCreatorActivity extends AppCompatActivity {
         
         try {
             WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            // Ensure window adjusts for keyboard
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
             setContentView(R.layout.activity_teacher_quiz_creator);
             
             // Check if we're in edit mode BEFORE initializing views

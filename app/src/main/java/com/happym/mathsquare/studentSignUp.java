@@ -18,12 +18,15 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.NumberPicker;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,14 +52,29 @@ public class studentSignUp extends AppCompatActivity {
     private String selectedSectionId;
     private String selectedSectionName;
     private String selectedGradeLevel;
+    private ScrollView scrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // Use adjustResize to resize window when keyboard appears (works better with ScrollView)
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         FirebaseApp.initializeApp(this);
 
         setContentView(R.layout.layoutstudent_sign_up);
+
+        // Get ScrollView reference
+        scrollView = findViewById(R.id.scrollView);
+        
+        // Ensure ScrollView can scroll
+        if (scrollView != null) {
+            scrollView.setSmoothScrollingEnabled(true);
+            scrollView.setVerticalScrollBarEnabled(true);
+        }
+
+        // Setup keyboard listener to scroll to focused field
+        setupKeyboardListener();
 
         // Firestore instance
 FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -71,6 +89,7 @@ FirebaseFirestore db = FirebaseFirestore.getInstance();
         TextView studentNumberError = findViewById(R.id.studentNumberError);
         TextInputLayout passwordLayout = findViewById(R.id.password_layout);
         TextInputEditText passwordInput = (TextInputEditText) passwordLayout.getEditText();
+        TextView signInLink = findViewById(R.id.sign_in_link);
 
 TextInputEditText firstNameEditText = (TextInputEditText) firstNameLayout.getEditText();
 
@@ -90,6 +109,9 @@ if (firstNameEditText != null) {
 if (lastNameEditText != null) {
     lastNameEditText.setFilters(new InputFilter[]{noSpacesFilter});
 }
+
+// Add focus listeners to scroll to fields when keyboard appears
+setupFieldFocusListeners(firstNameEditText, lastNameEditText, studentNumberInput, passwordInput, sectionChooser, numberDropdownPicker);
 
 List<String> grades = Arrays.asList("1", "2", "3", "4", "5", "6");
 
@@ -207,6 +229,15 @@ sectionChooser.setOnClickListener(v -> sectionChooser.showDropDown());
             @Override
             public void afterTextChanged(Editable editable) {}
         });
+
+        // Sign in link - navigate to login
+        if (signInLink != null) {
+            signInLink.setOnClickListener(v -> {
+                Intent intent = new Intent(studentSignUp.this, studentLogIn.class);
+                startActivity(intent);
+                finish();
+            });
+        }
 
         animateButtonFocus(submitButton);
 
@@ -687,5 +718,186 @@ private void stopButtonFocusAnimation(View button) {
         animatorSet.cancel();  // Stop the animation when focus is lost
     }
 }
+
+    /**
+     * Setup keyboard listener to scroll to focused field when keyboard appears
+     */
+    private void setupKeyboardListener() {
+        if (scrollView == null) return;
+
+        final View rootView = findViewById(android.R.id.content);
+        if (rootView == null) return;
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            private int previousHeightDiff = 0;
+            
+            @Override
+            public void onGlobalLayout() {
+                // Get the visible height of the root view
+                int heightDiff = rootView.getRootView().getHeight() - rootView.getHeight();
+                
+                // If height difference changed and is more than 200dp, keyboard is likely visible
+                if (heightDiff != previousHeightDiff && heightDiff > 200) {
+                    previousHeightDiff = heightDiff;
+                    
+                    // Find the currently focused view
+                    View focusedView = getCurrentFocus();
+                    if (focusedView != null && scrollView != null) {
+                        // Scroll to the focused view with multiple attempts to ensure it works
+                        scrollView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                scrollToView(focusedView);
+                            }
+                        });
+                        // Try again after a short delay to ensure keyboard is fully shown
+                        scrollView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                View currentFocus = getCurrentFocus();
+                                if (currentFocus != null) {
+                                    scrollToView(currentFocus);
+                                }
+                            }
+                        }, 100);
+                    }
+                } else if (heightDiff <= 200) {
+                    previousHeightDiff = heightDiff;
+                }
+            }
+        });
+    }
+
+    /**
+     * Setup focus listeners for all input fields to scroll when they receive focus
+     */
+    private void setupFieldFocusListeners(TextInputEditText firstNameEditText, TextInputEditText lastNameEditText,
+                                         TextInputEditText studentNumberInput, TextInputEditText passwordInput,
+                                         AutoCompleteTextView sectionChooser, AutoCompleteTextView numberDropdownPicker) {
+        View.OnFocusChangeListener focusListener = new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus && scrollView != null) {
+                    // Use requestRectangleOnScreen immediately for better response
+                    v.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // First try requestRectangleOnScreen
+                            v.requestRectangleOnScreen(
+                                new android.graphics.Rect(0, 0, v.getWidth(), v.getHeight()),
+                                true
+                            );
+                            
+                            // Then scroll with delay to ensure keyboard is shown
+                            int delay = (v == passwordInput) ? 600 : 400;
+                            scrollView.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    scrollToView(v);
+                                    // Try requestRectangleOnScreen again
+                                    v.requestRectangleOnScreen(
+                                        new android.graphics.Rect(0, 0, v.getWidth(), v.getHeight()),
+                                        true
+                                    );
+                                }
+                            }, delay);
+                        }
+                    });
+                }
+            }
+        };
+
+        if (firstNameEditText != null) {
+            firstNameEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (lastNameEditText != null) {
+            lastNameEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (studentNumberInput != null) {
+            studentNumberInput.setOnFocusChangeListener(focusListener);
+        }
+        if (passwordInput != null) {
+            passwordInput.setOnFocusChangeListener(focusListener);
+        }
+        if (sectionChooser != null) {
+            sectionChooser.setOnFocusChangeListener(focusListener);
+        }
+        if (numberDropdownPicker != null) {
+            numberDropdownPicker.setOnFocusChangeListener(focusListener);
+        }
+    }
+
+    /**
+     * Scroll ScrollView to show the specified view
+     */
+    private void scrollToView(View view) {
+        if (scrollView == null || view == null) return;
+
+        try {
+            // First, try requestRectangleOnScreen which is more reliable
+            view.requestRectangleOnScreen(
+                new android.graphics.Rect(0, 0, view.getWidth(), view.getHeight()),
+                true
+            );
+            
+            // Also calculate and scroll manually
+            // Get the location of the view in window coordinates
+            int[] viewLocation = new int[2];
+            view.getLocationInWindow(viewLocation);
+            
+            // Get the location of the ScrollView in window coordinates
+            int[] scrollViewLocation = new int[2];
+            scrollView.getLocationInWindow(scrollViewLocation);
+            
+            // Calculate the relative position
+            int relativeY = viewLocation[1] - scrollViewLocation[1];
+            
+            // Get the current scroll position
+            int currentScrollY = scrollView.getScrollY();
+            
+            // Get the visible height of the ScrollView
+            int scrollViewHeight = scrollView.getHeight();
+            
+            // Calculate desired scroll position to show the view with padding
+            // We want the view to be visible with some padding from the top (about 200dp for better visibility)
+            int desiredTopPadding = (int) (200 * getResources().getDisplayMetrics().density);
+            int targetScrollY = relativeY + currentScrollY - desiredTopPadding;
+            
+            // Make sure we don't scroll beyond bounds
+            View child = scrollView.getChildAt(0);
+            if (child != null) {
+                int maxScrollY = Math.max(0, child.getHeight() - scrollViewHeight);
+                targetScrollY = Math.max(0, Math.min(targetScrollY, maxScrollY));
+                
+                // Scroll to the calculated position
+                scrollView.smoothScrollTo(0, targetScrollY);
+                
+                // Also try fullScroll for bottom fields
+                if (view.getId() == R.id.password_input || view.getId() == R.id.student_number_input) {
+                    scrollView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Scroll to show the view at the bottom
+                            int[] loc = new int[2];
+                            view.getLocationInWindow(loc);
+                            int[] svLoc = new int[2];
+                            scrollView.getLocationInWindow(svLoc);
+                            int y = loc[1] - svLoc[1] + scrollView.getScrollY();
+                            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+                            int keyboardHeight = screenHeight - scrollViewHeight;
+                            int targetY = y - (screenHeight - keyboardHeight) + (int)(100 * getResources().getDisplayMetrics().density);
+                            scrollView.smoothScrollTo(0, Math.max(0, targetY));
+                        }
+                    });
+                }
+            }
+        } catch (Exception e) {
+            // Fallback: use requestRectangleOnScreen
+            view.requestRectangleOnScreen(
+                new android.graphics.Rect(0, 0, view.getWidth(), view.getHeight()),
+                true
+            );
+        }
+    }
 
 }

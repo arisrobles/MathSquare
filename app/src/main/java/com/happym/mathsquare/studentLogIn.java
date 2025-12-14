@@ -8,8 +8,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,15 +28,24 @@ import androidx.core.view.WindowCompat;
 public class studentLogIn extends AppCompatActivity {
     
     private FirebaseFirestore db;
+    private ScrollView scrollView;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // Ensure window adjusts for keyboard
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         FirebaseApp.initializeApp(this);
 
         setContentView(R.layout.layoutstudent_log_in);
+
+        // Get ScrollView reference
+        scrollView = findViewById(R.id.scrollView);
+
+        // Setup keyboard listener to scroll to focused field
+        setupKeyboardListener();
 
         // Firestore instance
         db = FirebaseFirestore.getInstance();
@@ -69,6 +81,9 @@ public class studentLogIn extends AppCompatActivity {
         if (passwordEditText != null) {
             passwordEditText.setFilters(new InputFilter[]{noSpacesFilter});
         }
+
+        // Add focus listeners to scroll when keyboard appears
+        setupFieldFocusListeners(studentIdEditText, passwordEditText);
 
         // Sign up link - navigate to registration
         if (signUpLink != null) {
@@ -192,6 +207,95 @@ public class studentLogIn extends AppCompatActivity {
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(scaleX, scaleY);
         animatorSet.start();
+    }
+
+    /**
+     * Setup keyboard listener to scroll to focused field when keyboard appears
+     */
+    private void setupKeyboardListener() {
+        if (scrollView == null) return;
+
+        final View rootView = findViewById(android.R.id.content);
+        if (rootView == null) return;
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                // Get the visible height of the root view
+                int heightDiff = rootView.getRootView().getHeight() - rootView.getHeight();
+                
+                // If height difference is more than 200dp, keyboard is likely visible
+                if (heightDiff > 200) {
+                    // Find the currently focused view
+                    View focusedView = getCurrentFocus();
+                    if (focusedView != null && scrollView != null) {
+                        // Scroll to the focused view
+                        scrollView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                int[] location = new int[2];
+                                focusedView.getLocationInWindow(location);
+                                
+                                // Calculate scroll position to show the focused view above keyboard
+                                int scrollY = location[1] - 200; // 200dp padding from top
+                                if (scrollY > 0) {
+                                    scrollView.smoothScrollTo(0, scrollY);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Setup focus listeners for all input fields to scroll when they receive focus
+     */
+    private void setupFieldFocusListeners(TextInputEditText studentIdEditText, TextInputEditText passwordEditText) {
+        View.OnFocusChangeListener focusListener = new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus && scrollView != null) {
+                    // Delay to ensure keyboard is shown
+                    scrollView.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            scrollToView(v);
+                        }
+                    }, 300);
+                }
+            }
+        };
+
+        if (studentIdEditText != null) {
+            studentIdEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (passwordEditText != null) {
+            passwordEditText.setOnFocusChangeListener(focusListener);
+        }
+    }
+
+    /**
+     * Scroll ScrollView to show the specified view
+     */
+    private void scrollToView(View view) {
+        if (scrollView == null || view == null) return;
+
+        int[] location = new int[2];
+        view.getLocationInWindow(location);
+        
+        // Get the location relative to ScrollView
+        scrollView.getLocationInWindow(location);
+        int[] viewLocation = new int[2];
+        view.getLocationInWindow(viewLocation);
+        
+        // Calculate the scroll position
+        int scrollY = viewLocation[1] - location[1] - 100; // 100dp padding from top
+        
+        if (scrollY > 0) {
+            scrollView.smoothScrollTo(0, scrollY);
+        }
     }
 }
 

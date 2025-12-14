@@ -603,6 +603,8 @@ public class Results extends AppCompatActivity {
             collectionRef
                     .whereEqualTo("firstName", firstName)
                     .whereEqualTo("lastName", lastName)
+                    .whereEqualTo("section", section)
+                    .whereEqualTo("grade", grade)
                     .whereEqualTo("gameType", "Passing")
                     .whereEqualTo("operation_type", operation)
                     .get()
@@ -704,7 +706,33 @@ public class Results extends AppCompatActivity {
                                                                                 return a.compareTo(b);
                                                                             }
                                                                         });
+                                                                android.util.Log.d("PassingProgress", "Added level to completed: " + levelNum);
                                                             }
+
+                                                            // Calculate next level to unlock based on completed levels
+                                                            // If nextlevel is null or empty, calculate it from completed levels
+                                                            String finalNextLevel = nextlevel;
+                                                            if (finalNextLevel == null || finalNextLevel.isEmpty()) {
+                                                                // Calculate next level: find max completed level and add 1
+                                                                int maxLevel = completedLevels.stream()
+                                                                    .mapToInt(lvl -> {
+                                                                        try {
+                                                                            return Integer.parseInt(lvl.replaceAll("\\D+", ""));
+                                                                        } catch (NumberFormatException e) {
+                                                                            return 0;
+                                                                        }
+                                                                    })
+                                                                    .max()
+                                                                    .orElse(0);
+                                                                finalNextLevel = "level_" + (maxLevel + 1);
+                                                                android.util.Log.d("PassingProgress", "Calculated next level: " + finalNextLevel + " (max completed: " + maxLevel + ")");
+                                                            } else {
+                                                                android.util.Log.d("PassingProgress", "Using provided next level: " + finalNextLevel);
+                                                            }
+
+                                                            android.util.Log.d("PassingProgress", "Updating passing progress - Level: " + levelNum + ", Score: " + Score + ", Stars: " + starRating + ", Next Level: " + finalNextLevel);
+                                                            android.util.Log.d("PassingProgress", "Completed levels: " + completedLevels);
+                                                            android.util.Log.d("PassingProgress", "Stars list: " + existingStarsList);
 
                                                             // Always update the database with the new star rating (even for retakes)
                                                             docRef.update(
@@ -713,7 +741,7 @@ public class Results extends AppCompatActivity {
                                                                             "stars_list",
                                                                                     existingStarsList,
                                                                             "passing_level_must_complete",
-                                                                                    nextlevel)
+                                                                                    finalNextLevel)
                                                                     .addOnSuccessListener(
                                                                             aVoid ->
                                                                                     Toast

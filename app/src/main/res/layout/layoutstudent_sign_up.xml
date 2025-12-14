@@ -9,14 +9,20 @@
     android:id="@+id/main">
 
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="false"
+        android:scrollbars="vertical"
+        android:nestedScrollingEnabled="true"
+        android:isScrollContainer="true">
 
         <LinearLayout
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
+            android:minHeight="1000dp"
             android:padding="16dp"
+            android:paddingBottom="300dp"
             android:orientation="vertical"
             android:layout_marginTop="30dp">
 
@@ -25,7 +31,7 @@
             android:layout_width="match_parent"
             android:textSize="28sp"
             android:textColor="@color/white"
-            android:layout_marginBottom="100dp"
+            android:layout_marginBottom="30dp"
             android:gravity="center_horizontal"
             android:layout_marginHorizontal="28dp"
             android:shadowRadius="4"
@@ -163,6 +169,20 @@
                 android:inputType="textPassword"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/sign_in_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:text="Already registered? Sign in"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/paytone_one"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp" />
 
         <TextView
             android:layout_height="wrap_content"

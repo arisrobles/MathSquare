@@ -31,7 +31,7 @@
         <activity
             android:name=".studentSignUp"
             android:exported="true"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
+            android:windowSoftInputMode="adjustResize|stateVisible" />
         <activity
             android:name=".studentLogIn"
             android:exported="true"

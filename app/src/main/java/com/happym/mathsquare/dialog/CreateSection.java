@@ -17,12 +17,15 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -81,6 +84,8 @@ public class CreateSection extends DialogFragment {
         dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         // Set background to match the layout background color (yellowbg)
         dialog.getWindow().setBackgroundDrawableResource(R.color.yellowbg);
+        // Ensure window adjusts for keyboard
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         return dialog;
     }
 
@@ -92,10 +97,16 @@ public class CreateSection extends DialogFragment {
                 // Firestore instance
 FirebaseFirestore db = FirebaseFirestore.getInstance();
         
+        ScrollView scrollView = view.findViewById(R.id.scrollView);
         TextInputLayout sectionLayout = view.findViewById(R.id.email_address_layout);
         Spinner numberDropdownPicker = view.findViewById(R.id.numberDropdownPicker);
         TextView spinnerError = view.findViewById(R.id.spinnerError);
         AppCompatButton btbSubmit = view.findViewById(R.id.btn_submit);
+        
+        // Setup keyboard listener to scroll to focused field
+        if (scrollView != null) {
+            setupKeyboardListener(view, scrollView);
+        }
         
         
         animateButtonFocus(btbSubmit);
@@ -106,18 +117,30 @@ adapterGrades.setDropDownViewResource(R.layout.spinner_item);
 numberDropdownPicker.setAdapter(adapterGrades);
         
 
-                ((TextInputEditText) sectionLayout.getEditText()).addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+        TextInputEditText sectionEditText = (TextInputEditText) sectionLayout.getEditText();
+        if (sectionEditText != null) {
+            sectionEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                sectionLayout.setError(null);
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    sectionLayout.setError(null);
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {}
+            });
+            
+            // Add focus listener to scroll when keyboard appears
+            if (scrollView != null) {
+                sectionEditText.setOnFocusChangeListener((v, hasFocus) -> {
+                    if (hasFocus) {
+                        scrollView.postDelayed(() -> scrollToView(scrollView, v), 300);
+                    }
+                });
             }
-
-            @Override
-            public void afterTextChanged(Editable editable) {}
-        });
+        }
         
         // Add custom logic for resume button
         btbSubmit.setOnClickListener(new View.OnClickListener() {
@@ -273,6 +296,58 @@ private void stopButtonFocusAnimation(View button) {
         animatorSet.cancel();  // Stop the animation when focus is lost
     }
 }
+
+    /**
+     * Setup keyboard listener to scroll to focused field when keyboard appears
+     */
+    private void setupKeyboardListener(View rootView, ScrollView scrollView) {
+        if (scrollView == null || rootView == null) return;
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                // Get the visible height of the root view
+                int heightDiff = rootView.getRootView().getHeight() - rootView.getHeight();
+                
+                // If height difference is more than 200dp, keyboard is likely visible
+                if (heightDiff > 200) {
+                    // Find the currently focused view
+                    View focusedView = getDialog() != null ? getDialog().getCurrentFocus() : null;
+                    if (focusedView != null && scrollView != null) {
+                        // Scroll to the focused view
+                        scrollView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                scrollToView(scrollView, focusedView);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Scroll ScrollView to show the specified view
+     */
+    private void scrollToView(ScrollView scrollView, View view) {
+        if (scrollView == null || view == null) return;
+
+        int[] location = new int[2];
+        view.getLocationInWindow(location);
+        
+        // Get the location relative to ScrollView
+        scrollView.getLocationInWindow(location);
+        int[] viewLocation = new int[2];
+        view.getLocationInWindow(viewLocation);
+        
+        // Calculate the scroll position
+        int scrollY = viewLocation[1] - location[1] - 100; // 100dp padding from top
+        
+        if (scrollY > 0) {
+            scrollView.smoothScrollTo(0, scrollY);
+        }
+    }
     
 }
 

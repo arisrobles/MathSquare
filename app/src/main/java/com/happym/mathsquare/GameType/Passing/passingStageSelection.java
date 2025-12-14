@@ -405,26 +405,11 @@ public class passingStageSelection extends AppCompatActivity {
                                         starViews[currentIndex].setImageResource(R.drawable.ic_star_none);
                                     }
 
-                                    // Check if this level has 3 stars before making next level available
-                                    if (currentIndex < levels.length - 1) {  // If not the last level
-                                        if (!"3 Stars".equals(starsEarned)) {
-                                            // If current level doesn't have 3 stars, make next level unavailable
-                                            levels[currentIndex + 1].setContentDescription("Not_Available");
-                                            levels[currentIndex + 1].setBackgroundResource(R.drawable.btn_short_condition_off);
-                                            flashboxes[currentIndex + 1].setImageResource(R.drawable.transparent_box);
-                                        }
-                                    }
+                                    // Level is completed - next level unlocks automatically when passing_level_must_complete is updated
+                                    // Any passing score (1+ stars) unlocks the next level
                                 } else if (isAvailable) {
-                                    // Check if previous level has 3 stars
-                                    if (currentIndex > 0) {  // If not the first level
-                                        String previousLevelStars = starsPerLevel.get("level_" + currentIndex);
-                                        if (!"3 Stars".equals(previousLevelStars)) {
-                                            level.setContentDescription("Not_Available");
-                                            level.setBackgroundResource(R.drawable.btn_short_condition_off);
-                                            flashbox.setImageResource(R.drawable.transparent_box);
-                                            continue;  // Skip the rest of this iteration
-                                        }
-                                    }
+                                    // Level is available based on passing_level_must_complete
+                                    // Any passing score (1+ stars) unlocks the next level - no need to check for 3 stars
 
                                     level.setContentDescription("Available");
                                     level.setBackgroundResource(R.drawable.btn_short_condition);
@@ -457,15 +442,6 @@ public class passingStageSelection extends AppCompatActivity {
                                         stopButtonFocusAnimation(level);
                                         startActivity(intent);
                                     } else {
-                                        if (currentIndex > 0) {  // If not the first level
-                                            String previousLevelStars = starsPerLevel.get("level_" + currentIndex);
-                                            if (!"3 Stars".equals(previousLevelStars)) {
-                                                Toast.makeText(passingStageSelection.this,
-                                                        "You need 3 stars in level " + currentIndex + " to unlock this level!",
-                                                        Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-                                        }
                                         Toast.makeText(passingStageSelection.this,
                                                 "Complete previous " + previousLevel + " to unlock.",
                                                 Toast.LENGTH_SHORT).show();
@@ -614,26 +590,11 @@ public class passingStageSelection extends AppCompatActivity {
                                         starViews[currentIndex].setImageResource(R.drawable.ic_star_none);
                                     }
 
-                                    // Check if this level has 3 stars before making next level available
-                                    if (currentIndex < levels.length - 1) {  // If not the last level
-                                        if (!"3 Stars".equals(starsEarned)) {
-                                            // If current level doesn't have 3 stars, make next level unavailable
-                                            levels[currentIndex + 1].setContentDescription("Not_Available");
-                                            levels[currentIndex + 1].setBackgroundResource(R.drawable.btn_short_condition_off);
-                                            flashboxes[currentIndex + 1].setImageResource(R.drawable.transparent_box);
-                                        }
-                                    }
+                                    // Level is completed - next level unlocks automatically when passing_level_must_complete is updated
+                                    // Any passing score (1+ stars) unlocks the next level
                                 } else if (isAvailable) {
-                                    // Check if previous level has 3 stars
-                                    if (currentIndex > 0) {  // If not the first level
-                                        String previousLevelStars = starsPerLevel.get("level_" + currentIndex);
-                                        if (!"3 Stars".equals(previousLevelStars)) {
-                                            level.setContentDescription("Not_Available");
-                                            level.setBackgroundResource(R.drawable.btn_short_condition_off);
-                                            flashbox.setImageResource(R.drawable.transparent_box);
-                                            continue;  // Skip the rest of this iteration
-                                        }
-                                    }
+                                    // Level is available based on passing_level_must_complete
+                                    // Any passing score (1+ stars) unlocks the next level - no need to check for 3 stars
 
                                     level.setContentDescription("Available");
                                     level.setBackgroundResource(R.drawable.btn_short_condition);
@@ -666,15 +627,6 @@ public class passingStageSelection extends AppCompatActivity {
                                         stopButtonFocusAnimation(level);
                                         startActivity(intent);
                                     } else {
-                                        if (currentIndex > 0) {  // If not the first level
-                                            String previousLevelStars = starsPerLevel.get("level_" + currentIndex);
-                                            if (!"3 Stars".equals(previousLevelStars)) {
-                                                Toast.makeText(passingStageSelection.this,
-                                                        "You need 3 stars in level " + currentIndex + " to unlock this level!",
-                                                        Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-                                        }
                                         Toast.makeText(passingStageSelection.this,
                                                 "Complete previous " + previousLevel + " to unlock.",
                                                 Toast.LENGTH_SHORT).show();

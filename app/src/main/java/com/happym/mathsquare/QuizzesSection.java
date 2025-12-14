@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -641,6 +643,107 @@ public class QuizzesSection extends AppCompatActivity {
     }
     
     /**
+     * Show quiz confirmation dialog before starting quiz
+     */
+    private void showQuizConfirmationDialog(String csvQuizId, String difficulty, 
+                                            com.google.firebase.firestore.QueryDocumentSnapshot firebaseQuizDoc) {
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_quiz_confirmation);
+        dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, 
+                                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        
+        TextView txtQuizTitle = dialog.findViewById(R.id.txtQuizTitle);
+        TextView txtQuizNumber = dialog.findViewById(R.id.txtQuizNumber);
+        TextView txtOperation = dialog.findViewById(R.id.txtOperation);
+        TextView txtNumberOfItems = dialog.findViewById(R.id.txtNumberOfItems);
+        AppCompatButton btnCancel = dialog.findViewById(R.id.btnCancel);
+        AppCompatButton btnConfirm = dialog.findViewById(R.id.btnConfirm);
+        
+        String quizTitle = "";
+        String quizNumber = "";
+        String operations = "";
+        int numberOfItems = 0;
+        
+        if (csvQuizId != null) {
+            // CSV Quiz
+            int quizNum = extractQuizNumberFromId(csvQuizId);
+            quizTitle = "Quiz " + quizNum;
+            quizNumber = String.valueOf(quizNum);
+            
+            // Get operations based on difficulty
+            List<String> operationList = new ArrayList<>();
+            if (difficulty.equals("Easy")) {
+                operationList = new ArrayList<>(Arrays.asList("Addition", "Subtraction"));
+            } else if (difficulty.equals("Medium")) {
+                operationList = new ArrayList<>(Arrays.asList("Addition", "Subtraction", "Multiplication", "Division"));
+            } else if (difficulty.equals("Hard")) {
+                operationList = new ArrayList<>(Arrays.asList("Addition", "Subtraction", "Multiplication", "Division", "Decimal", "Percentage"));
+            }
+            
+            operations = String.join(", ", operationList);
+            numberOfItems = operationList.size() * 5; // 5 questions per operation
+        } else if (firebaseQuizDoc != null) {
+            // Firebase Quiz
+            quizTitle = firebaseQuizDoc.getString("quizTitle");
+            if (quizTitle == null || quizTitle.isEmpty()) {
+                quizTitle = "Custom Quiz";
+            }
+            quizNumber = firebaseQuizDoc.getString("quizNumber");
+            if (quizNumber == null || quizNumber.isEmpty()) {
+                quizNumber = "1";
+            }
+            
+            // Get questions to determine operations and count
+            List<Map<String, Object>> questions = 
+                (List<Map<String, Object>>) firebaseQuizDoc.get("questions");
+            if (questions != null && !questions.isEmpty()) {
+                numberOfItems = questions.size();
+                
+                // Extract unique operations from questions
+                Set<String> operationSet = new HashSet<>();
+                for (Map<String, Object> question : questions) {
+                    String operation = question.get("operation") != null ? 
+                        question.get("operation").toString() : "Unknown";
+                    operationSet.add(operation);
+                }
+                operations = String.join(", ", operationSet);
+            } else {
+                operations = "Unknown";
+                numberOfItems = 0;
+            }
+        }
+        
+        // Set dialog content
+        txtQuizTitle.setText(quizTitle);
+        txtQuizNumber.setText("Quiz Number: " + quizNumber);
+        txtOperation.setText("Operation: " + operations);
+        txtNumberOfItems.setText("No. of Items: " + numberOfItems);
+        
+        // Cancel button
+        btnCancel.setOnClickListener(v -> {
+            playSound("click.mp3");
+            dialog.dismiss();
+        });
+        
+        // Confirm button
+        btnConfirm.setOnClickListener(v -> {
+            playSound("click.mp3");
+            dialog.dismiss();
+            
+            if (csvQuizId != null) {
+                // Start CSV quiz
+                startCSVQuiz(csvQuizId, difficulty);
+            } else if (firebaseQuizDoc != null) {
+                // Start Firebase quiz
+                startFirebaseQuiz(firebaseQuizDoc);
+            }
+        });
+        
+        dialog.show();
+    }
+    
+    /**
      * Start CSV quiz - always accessible (no restrictions, no tutorial check)
      * CSV quizzes are opened by default and should remain accessible
      */
@@ -1064,11 +1167,11 @@ public class QuizzesSection extends AppCompatActivity {
                 playSound("click.mp3");
                 
                 if (item.isCSVQuiz) {
-                    // CSV quiz - always accessible, no restrictions
-                    startCSVQuiz(item.quizId, item.difficulty);
+                    // CSV quiz - show confirmation dialog
+                    showQuizConfirmationDialog(item.quizId, item.difficulty, null);
                 } else {
-                    // Firebase quiz - check schedule and start
-                    startFirebaseQuiz(item.quizDoc);
+                    // Firebase quiz - show confirmation dialog
+                    showQuizConfirmationDialog(null, null, item.quizDoc);
                 }
             });
         }

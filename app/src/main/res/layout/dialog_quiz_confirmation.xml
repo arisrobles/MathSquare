@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="12dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <!-- Quiz Icon -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📝"
+            android:textSize="48sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Quiz Title -->
+        <TextView
+            android:id="@+id/txtQuizTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quiz Title"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="#204520"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Quiz Number -->
+        <TextView
+            android:id="@+id/txtQuizNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quiz Number: 1"
+            android:textSize="18sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="#5DB575"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Operation -->
+        <TextView
+            android:id="@+id/txtOperation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Operation: Addition, Subtraction"
+            android:textSize="16sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Number of Items -->
+        <TextView
+            android:id="@+id/txtNumberOfItems"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No. of Items: 10"
+            android:textSize="16sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Confirmation Message -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Are you sure want to take this quiz??"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="#204520"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Buttons Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="2">
+
+            <!-- Cancel Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Cancel"
+                android:background="@drawable/btn_short_condition_off"
+                android:fontFamily="@font/paytone_one"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp"
+                android:stateListAnimator="@null" />
+
+            <!-- Confirm Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnConfirm"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Yes, Start"
+                android:background="@drawable/btn_playgame"
+                android:fontFamily="@font/paytone_one"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp"
+                android:stateListAnimator="@null" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
+

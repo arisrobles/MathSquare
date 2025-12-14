@@ -14,13 +14,15 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
-
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.NumberPicker;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,15 +59,24 @@ public class teacherSignUp extends AppCompatActivity {
     // Firestore instance as class field
     private FirebaseFirestore db;
     private Spinner gradeSpinner, sectionSpinner;
+    private ScrollView scrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // Ensure window adjusts for keyboard
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         FirebaseApp.initializeApp(this);
 
         setContentView(R.layout.layoutteacher_sign_up);
+
+        // Get ScrollView reference
+        scrollView = findViewById(R.id.scrollView);
+
+        // Setup keyboard listener to scroll to focused field
+        setupKeyboardListener();
 
         // Initialize Firestore instance
         db = FirebaseFirestore.getInstance();
@@ -107,6 +118,8 @@ if (passwordEditText != null) {
            passwordREditText.setFilters(new InputFilter[]{noSpacesFilter});
 }
 
+// Add focus listeners to scroll when keyboard appears
+setupFieldFocusListeners(emailEditText, firstNameEditText, passwordEditText, passwordREditText);
 
         submitButton.setOnClickListener(v -> {
             boolean hasError = false;
@@ -479,5 +492,101 @@ private void stopButtonFocusAnimation(View button) {
         animatorSet.cancel();  // Stop the animation when focus is lost
     }
 }
+
+    /**
+     * Setup keyboard listener to scroll to focused field when keyboard appears
+     */
+    private void setupKeyboardListener() {
+        if (scrollView == null) return;
+
+        final View rootView = findViewById(android.R.id.content);
+        if (rootView == null) return;
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                // Get the visible height of the root view
+                int heightDiff = rootView.getRootView().getHeight() - rootView.getHeight();
+                
+                // If height difference is more than 200dp, keyboard is likely visible
+                if (heightDiff > 200) {
+                    // Find the currently focused view
+                    View focusedView = getCurrentFocus();
+                    if (focusedView != null && scrollView != null) {
+                        // Scroll to the focused view
+                        scrollView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                int[] location = new int[2];
+                                focusedView.getLocationInWindow(location);
+                                
+                                // Calculate scroll position to show the focused view above keyboard
+                                int scrollY = location[1] - 200; // 200dp padding from top
+                                if (scrollY > 0) {
+                                    scrollView.smoothScrollTo(0, scrollY);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Setup focus listeners for all input fields to scroll when they receive focus
+     */
+    private void setupFieldFocusListeners(TextInputEditText emailEditText, TextInputEditText firstNameEditText,
+                                         TextInputEditText passwordEditText, TextInputEditText passwordREditText) {
+        View.OnFocusChangeListener focusListener = new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus && scrollView != null) {
+                    // Delay to ensure keyboard is shown
+                    scrollView.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            scrollToView(v);
+                        }
+                    }, 300);
+                }
+            }
+        };
+
+        if (emailEditText != null) {
+            emailEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (firstNameEditText != null) {
+            firstNameEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (passwordEditText != null) {
+            passwordEditText.setOnFocusChangeListener(focusListener);
+        }
+        if (passwordREditText != null) {
+            passwordREditText.setOnFocusChangeListener(focusListener);
+        }
+    }
+
+    /**
+     * Scroll ScrollView to show the specified view
+     */
+    private void scrollToView(View view) {
+        if (scrollView == null || view == null) return;
+
+        int[] location = new int[2];
+        view.getLocationInWindow(location);
+        
+        // Get the location relative to ScrollView
+        scrollView.getLocationInWindow(location);
+        int[] viewLocation = new int[2];
+        view.getLocationInWindow(viewLocation);
+        
+        // Calculate the scroll position
+        int scrollY = viewLocation[1] - location[1] - 100; // 100dp padding from top
+        
+        if (scrollY > 0) {
+            scrollView.smoothScrollTo(0, scrollY);
+        }
+    }
 
 }

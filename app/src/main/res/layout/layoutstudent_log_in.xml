@@ -8,13 +8,24 @@
      android:background="@color/yellowbg"
      android:id="@+id/main">
 
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:orientation="vertical">
+
     <TextView
          android:layout_height="wrap_content"
          android:layout_width="match_parent"
          android:textSize="28sp"
          android:textColor="@color/white"
-         android:layout_marginTop="70dp"
-         android:layout_marginBottom="100dp"
+         android:layout_marginTop="50dp"
+         android:layout_marginBottom="50dp"
          android:gravity="center_horizontal"
          android:layout_marginHorizontal="28dp"
          android:shadowRadius="4"
@@ -29,8 +40,9 @@
          android:layout_height="wrap_content"
          android:layout_width="match_parent"
          android:padding="16dp"
+         android:paddingBottom="100dp"
          android:orientation="vertical"
-         android:layout_marginTop="160dp">
+         android:layout_marginTop="0dp">
 
         <com.google.android.material.textfield.TextInputLayout
              android:layout_height="wrap_content"
@@ -111,6 +123,10 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>
 

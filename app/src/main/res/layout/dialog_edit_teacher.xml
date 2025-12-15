@@ -64,6 +64,38 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Current Assignments -->
+        <TextView
+            android:id="@+id/textAssignmentsLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Current Assignments"
+            android:textSize="16sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="@color/white"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutAssignments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnAddAssignment"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="Add Assignment"
+            android:textSize="14sp"
+            android:fontFamily="@font/paytone_one"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_condition_create"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="20dp" />
+
         <!-- Buttons -->
         <LinearLayout
             android:layout_width="match_parent"

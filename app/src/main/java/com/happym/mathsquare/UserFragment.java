@@ -32,6 +32,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.util.Pair;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -1429,7 +1430,8 @@ private void stopButtonFocusAnimation(View button) {
     }
     
     /**
-     * Shows dialog to edit teacher's assigned grade and section
+     * Shows dialog to edit teacher's assigned grade and section.
+     * Supports adding multiple grade/section assignments.
      */
     private void showEditTeacherDialog(User teacher) {
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_teacher, null);
@@ -1439,8 +1441,13 @@ private void stopButtonFocusAnimation(View button) {
         TextView teacherNameText = dialogView.findViewById(R.id.textTeacherName);
         Button btnSave = dialogView.findViewById(R.id.btnSave);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnAddAssignment = dialogView.findViewById(R.id.btnAddAssignment);
+        LinearLayout assignmentsLayout = dialogView.findViewById(R.id.layoutAssignments);
         
         teacherNameText.setText(teacher.getName());
+
+        // Track all assignments as pairs of (grade, section)
+        List<Pair<String, String>> assignments = new ArrayList<>();
         
         // Setup grade spinner
         List<String> grades = Arrays.asList("Select Grade", "1", "2", "3", "4", "5", "6");
@@ -1462,7 +1469,8 @@ private void stopButtonFocusAnimation(View button) {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position > 0) {
                     String selectedGrade = grades.get(position);
-                    loadSectionsForGrade(sectionSpinner, selectedGrade, teacher.getSection());
+                    // When grade changes, load sections for that grade
+                    loadSectionsForGrade(sectionSpinner, selectedGrade, null);
                 } else {
                     sectionSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, new ArrayList<>()));
                 }
@@ -1472,10 +1480,57 @@ private void stopButtonFocusAnimation(View button) {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
         
-        // Load sections if grade is already set
-        if (teacher.getGrade() != null && !teacher.getGrade().equals("N/A")) {
-            loadSectionsForGrade(sectionSpinner, teacher.getGrade(), teacher.getSection());
+        // Pre-load existing assignments from TeacherProfiles
+        db.collection("TeacherProfiles")
+            .document(teacher.getDocId())
+            .get()
+            .addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot != null && documentSnapshot.exists()) {
+                    // Try to read list of assignments first
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> pairs =
+                        (List<Map<String, Object>>) documentSnapshot.get("assignedGradeSectionPairs");
+                    if (pairs != null && !pairs.isEmpty()) {
+                        for (Map<String, Object> pair : pairs) {
+                            if (pair == null) continue;
+                            Object gObj = pair.get("grade");
+                            Object sObj = pair.get("section");
+                            if (gObj != null && sObj != null) {
+                                String g = gObj.toString();
+                                String s = sObj.toString();
+                                if (!g.isEmpty() && !s.isEmpty()) {
+                                    assignments.add(new Pair<>(g, s));
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback to single assignedGrade/assignedSection fields
+                        String g = documentSnapshot.getString("assignedGrade");
+                        String s = documentSnapshot.getString("assignedSection");
+                        if (g != null && !g.isEmpty() && s != null && !s.isEmpty()) {
+                            assignments.add(new Pair<>(g, s));
+                        }
+                    }
+                }
+
+                // If still empty, use grade/section from the User object as a last fallback
+                if (assignments.isEmpty()
+                        && teacher.getGrade() != null && !teacher.getGrade().equals("N/A")
+                        && teacher.getSection() != null && !teacher.getSection().equals("N/A")) {
+                    assignments.add(new Pair<>(teacher.getGrade(), teacher.getSection()));
+                }
+
+                refreshAssignmentsUI(assignmentsLayout, assignments);
+            })
+            .addOnFailureListener(e -> {
+                // If Firestore fetch fails, still allow editing starting from current User grade/section
+                if (assignments.isEmpty()
+                        && teacher.getGrade() != null && !teacher.getGrade().equals("N/A")
+                        && teacher.getSection() != null && !teacher.getSection().equals("N/A")) {
+                    assignments.add(new Pair<>(teacher.getGrade(), teacher.getSection()));
         }
+                refreshAssignmentsUI(assignmentsLayout, assignments);
+            });
         
         AlertDialog dialog = new AlertDialog.Builder(requireContext(), R.style.RoundedAlertDialog)
             .setView(dialogView)
@@ -1487,7 +1542,8 @@ private void stopButtonFocusAnimation(View button) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
         
-        btnSave.setOnClickListener(v -> {
+        // Add assignment button - appends current grade/section selection to list
+        btnAddAssignment.setOnClickListener(v -> {
             int gradePos = gradeSpinner.getSelectedItemPosition();
             int sectionPos = sectionSpinner.getSelectedItemPosition();
             
@@ -1496,22 +1552,78 @@ private void stopButtonFocusAnimation(View button) {
                 return;
             }
             
-            if (sectionPos == 0 || sectionSpinner.getAdapter().getCount() == 0) {
+            if (sectionSpinner.getAdapter() == null
+                    || sectionSpinner.getAdapter().getCount() == 0
+                    || sectionPos <= 0) {
                 Toast.makeText(requireContext(), "Please select a section", Toast.LENGTH_SHORT).show();
                 return;
             }
             
             String selectedGrade = grades.get(gradePos);
-            String selectedSection = (String) sectionSpinner.getSelectedItem();
+            String selectedSection = (String) sectionSpinner.getItemAtPosition(sectionPos);
             
-            // Update teacher in Firebase
-            updateTeacherGradeSection(teacher, selectedGrade, selectedSection);
+            // Avoid duplicates
+            for (Pair<String, String> p : assignments) {
+                if (p.first.equals(selectedGrade) && p.second.equals(selectedSection)) {
+                    Toast.makeText(requireContext(), "This assignment is already added", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
+            assignments.add(new Pair<>(selectedGrade, selectedSection));
+            refreshAssignmentsUI(assignmentsLayout, assignments);
+        });
+
+        btnSave.setOnClickListener(v -> {
+            if (assignments.isEmpty()) {
+                Toast.makeText(requireContext(), "Please add at least one assignment", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Update teacher in Firebase with all assignments
+            updateTeacherAssignments(teacher, assignments);
             dialog.dismiss();
         });
         
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
+    }
+
+    /**
+     * Refresh the list of assignments shown in the dialog.
+     * Long-press on an item to remove it.
+     */
+    private void refreshAssignmentsUI(LinearLayout container, List<Pair<String, String>> assignments) {
+        container.removeAllViews();
+
+        if (assignments == null || assignments.isEmpty()) {
+            TextView emptyView = new TextView(requireContext());
+            emptyView.setText("No assignments yet. Select a grade and section, then tap \"Add Assignment\".");
+            emptyView.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+            emptyView.setTextSize(14);
+            container.addView(emptyView);
+            return;
+        }
+
+        for (int i = 0; i < assignments.size(); i++) {
+            Pair<String, String> pair = assignments.get(i);
+            TextView itemView = new TextView(requireContext());
+            itemView.setText("Grade " + pair.first + " - " + pair.second);
+            itemView.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+            itemView.setTextSize(14);
+            int padding = (int) (8 * getResources().getDisplayMetrics().density);
+            itemView.setPadding(0, padding / 2, 0, padding / 2);
+
+            final int index = i;
+            itemView.setOnLongClickListener(v -> {
+                assignments.remove(index);
+                refreshAssignmentsUI(container, assignments);
+                return true;
+            });
+
+            container.addView(itemView);
+        }
     }
     
     /**
@@ -1556,16 +1668,37 @@ private void stopButtonFocusAnimation(View button) {
     }
     
     /**
-     * Update teacher's assigned grade and section in Firebase
+     * Update teacher's assigned grade and section list in Firebase.
+     * Stores both the primary assignment (for backward compatibility)
+     * and the full list as assignedGradeSectionPairs.
      */
-    private void updateTeacherGradeSection(User teacher, String grade, String section) {
+    private void updateTeacherAssignments(User teacher, List<Pair<String, String>> assignments) {
+        if (assignments == null || assignments.isEmpty()) {
+            return;
+        }
+
+        List<Map<String, Object>> pairData = new ArrayList<>();
+        for (Pair<String, String> pair : assignments) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("grade", pair.first);
+            map.put("section", pair.second);
+            pairData.add(map);
+        }
+
+        Pair<String, String> primary = assignments.get(0);
+
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("assignedGrade", primary.first);
+        updateData.put("assignedSection", primary.second);
+        updateData.put("assignedGradeSectionPairs", pairData);
+
         db.collection("TeacherProfiles")
             .document(teacher.getDocId())
-            .update("assignedGrade", grade, "assignedSection", section)
+            .update(updateData)
             .addOnSuccessListener(aVoid -> {
-                // Update local user object
-                teacher.setGrade(grade);
-                teacher.setSection(section);
+                // Update local user object with primary assignment
+                teacher.setGrade(primary.first);
+                teacher.setSection(primary.second);
                 
                 // Refresh the table
                 fetchAllUsers();
